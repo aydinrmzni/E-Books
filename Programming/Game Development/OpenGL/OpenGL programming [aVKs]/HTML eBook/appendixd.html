@@ -1,0 +1,246 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Appendix D - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<HR>
+<H1>
+Appendix D<BR>
+The OpenGL Extension to the X Window System</H1>
+This appendix briefly discusses the routines defined as part of the OpenGL
+Extension to the X Window System (GLX). These routines are discussed in
+more detail in the <I>OpenGL Reference Manual</I>. You need to have some
+knowledge of X to fully understand the following and to use GLX successfully.
+This appendix has the following major sections:
+<UL>"Initialization"
+<BR>&nbsp;
+<P>"Controlling Rendering"
+<BR>&nbsp;
+<P>"GLX Prototypes"</UL>
+In the X Window System, OpenGL rendering is made available as an extension
+to X in the formal X sense: Connection and authentication are accomplished
+with the normal X mechanisms. As with other X extensions, there is a defined
+network protocol for OpenGL's rendering commands encapsulated within the
+X byte stream. Since performance is critical in three-dimensional rendering,
+the OpenGL extension to X allows OpenGL to bypass the X server's involvement
+in data encoding, copying, and interpretation and instead render directly
+to the graphics pipeline.
+<P>
+<HR>
+<H2>
+<A NAME="X"></A>Initialization</H2>
+Use <B>glXQueryExtension()</B> and <B>glXQueryVersion()</B> to determine
+whether the GLX extension is defined for an X server, and if so, which
+version is present. The <B>glXChooseVisual()</B> routine returns a pointer
+to an XVisualInfo structure describing the visual that best meets the client's
+specified attributes. You can query a visual about its support of a particular
+OpenGL attribute with <B>glXGetConfig()</B>.
+<P>
+<HR>
+<H2>
+Controlling Rendering</H2>
+Several GLX routines are provided for creating and managing an OpenGL rendering
+context. You can use such a context to render off-screen if you want. Routines
+are also provided for such tasks as synchronizing execution between the
+X and OpenGL streams, swapping front and back buffers, and using an X font.
+<H3>
+Managing an OpenGL Rendering Context</H3>
+An OpenGL rendering context is created with <B>glXCreateContext()</B>.
+One of the arguments to this routine allows you to request a direct rendering
+context that bypasses the X server as described previously. (Note that
+to do direct rendering, the X server connection must be local, and the
+OpenGL implementation needs to support direct rendering.) You can determine
+whether a GLX context is direct with <B>glXIsDirect()</B>.
+<P>To make a rendering context current, use <B>glXMakeCurrent()</B>; <B>glXGetCurrentContext()</B>
+returns the current context. You can also obtain the current drawable with
+<B>glXGetCurrentDrawable()</B>. Remember that only one context can be current
+for any thread at any one time. If you have multiple contexts, you can
+copy selected groups of OpenGL state variables from one context to another
+with <B>glXCopyContext()</B>. When you're finished with a particular context,
+destroy it with <B>glXDestroyContext()</B>.
+<H3>
+Off-Screen Rendering</H3>
+To render off-screen, first create an X Pixmap and then pass this as an
+argument to <B>glXCreateGLXPixmap()</B>. Once rendering is completed, you
+can destroy the association between the X and GLX Pixmaps with <B>glXDestroyGLXPixmap()</B>.
+(Off-screen rendering isn't guaranteed to be supported for direct renderers.)
+<H3>
+Synchronizing Execution</H3>
+To prevent X requests from executing until any outstanding OpenGL rendering
+is completed, call <B>glXWaitGL()</B>. Then, any previously issued OpenGL
+commands are guaranteed to be executed before any X rendering calls made
+after <B>glXWaitGL()</B>. Although the same result can be achieved with
+<B>glFinish()</B>, <B>glXWaitGL()</B> doesn't require a round trip to the
+server and thus is more efficient in cases where the client and server
+are on separate machines.
+<P>To prevent an OpenGL command sequence from executing until any outstanding
+X requests are completed, use <B>glXWaitX()</B>. This routine guarantees
+that previously issued X rendering calls are executed before any OpenGL
+calls made after <B>glXWaitX()</B>.
+<H3>
+Swapping Buffers</H3>
+For drawables that are double-buffered, the front and back buffers can
+be exchanged by calling <B>glXSwapBuffers()</B>. An implicit <B>glFlush()</B>
+is done as part of this routine.
+<H3>
+Using an X Font</H3>
+A shortcut for using X fonts in OpenGL is provided with the command <B>glXUseXFont()</B>.
+<P>
+<HR>
+<H2>
+GLX Prototypes</H2>
+
+<H3>
+Initialization</H3>
+Determine whether the GLX extension is defined on the X server:
+<DL>
+<DT>
+Bool <B>glXQueryExtension</B> (Display *<I>dpy</I>, int *<I>errorBase</I>,
+int *<I>eventBase</I>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>Bool <B>glXQueryVersion</B> (Display *<I>dpy</I>, int *<I>major</I>,
+int *<I>minor</I>);
+<DD>
+</DD>
+</DL>
+Obtain the desired visual:
+<DL>
+<DT>
+XVisualInfo* <B>glXChooseVisual</B> (Display *<I>dpy</I>, int <I>screen</I>,
+int *<I>attribList</I>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>int <B>glXGetConfig</B> (Display *<I>dpy</I>, XVisualInfo *<I>vis</I>,
+int <I>attrib</I>, int *<I>value</I>);
+<DD>
+</DD>
+</DL>
+
+<H3>
+Controlling Rendering</H3>
+Manage or query an OpenGL rendering context:
+<DL>
+<DT>
+GLXContext <B>glXCreateContext</B> (Display <I>*dpy</I>, XVisualInfo <I>*vis</I>,
+GLXContext <I>shareList</I>, Bool <I>direct</I>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glXDestroyContext</B> (Display <I>*dpy</I>, GLXContext <I>ctx</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glXCopyContext</B> (Display *<I>dpy</I>, GLXContext <I>src</I>,
+GLXContext <I>dst</I>, GLuint <I>mask</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>Bool <B>glXIsDirect</B> (Display *<I>dpy</I>, GLXContext <I>ctx</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>Bool <B>glXMakeCurrent</B> (Display *<I>dpy</I>, GLXDrawable <I>draw</I>,
+GLXContext <I>ctx</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>GLXContext <B>glXGetCurrentContext</B> (void);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>GLXDrawable <B>glXGetCurrentDrawable</B> (void);
+<DD>
+</DD>
+</DL>
+Perform off-screen rendering:
+<DL>
+<DT>
+GLXPixmap <B>glXCreateGLXPixmap</B> (Display *<I>dpy</I>, XVisualInfo *<I>vis</I>,
+Pixmap <I>pixmap</I>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glXDestroyGLXPixmap</B> (Display *<I>dpy</I>, GLXPixmap <I>pix</I>);
+<DD>
+</DD>
+</DL>
+Synchronize execution:
+<DL>
+<DT>
+void <B>glXWaitGL</B> (void);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glXWaitX</B> (void);
+<DD>
+</DD>
+</DL>
+Exchange front and back buffers:
+<DL>
+<DT>
+void <B>glXSwapBuffers</B> (Display *<I>dpy</I>, Window <I>window</I>);</DT>
+
+<DD>
+</DD>
+</DL>
+Use an X font:
+<DL>
+<DT>
+void <B>glXUseXFont</B> (Font <I>font</I>, int <I>first</I>, int <I>count</I>,
+int <I>listBase</I>);</DT>
+
+<DD>
+</DD>
+</DL>
+
+<HR><A HREF="appendixc.html">[Previous chapter]</A> <A HREF="appendixe.html">[Next
+chapter]
+<HR></A>See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>

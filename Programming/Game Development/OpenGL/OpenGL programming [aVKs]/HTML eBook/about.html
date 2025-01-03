@@ -1,0 +1,343 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <TITLE>OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+<A HREF="#html">(HTML edition information)</A>
+<BR>
+<HR>
+<H1>
+OpenGL Programming Guide</H1>
+
+<HR>
+<H2>
+The Official Guide to Learning OpenGL, Release 1</H2>
+<B>OpenGL Architecture Review Board</B>
+<P>Jackie Neider
+<P>Tom Davis
+<P>Mason Woo
+<P><B>Addison-Wesley Publishing Company</B>
+<P>Reading, Massachusetts Menlo Park, CaliforniaNew York Don Mills, Ontario
+Wokingham, EnglandAmsterdam Bonn Sydney Singapore Tokyo MadridSan Juan
+Paris Seoul Milan Mexico City Taipei
+<P>Silicon Graphics, the Silicon Graphics logo, and IRIS are registered
+trademarks and OpenGL and IRIS Graphics Library are trademarks of Silicon
+Graphics, Inc. X Window System is a trademark of Massachusetts Institute
+of Technology. Display PostScript is a registered trademark of Adobe Systems
+Incorporated.
+<P>The authors and publishers have taken care in preparation of this book,
+but make no expressed or implied warranty of any kind and assume no responsibility
+for errors or omissions. No liability is assumed for incidental or consequential
+damages in connection with or arising out of the use of the information
+or programs contained herein.
+<P><B>Copyright Š 1994 by Silicon Graphics, Inc.</B>
+<P>All rights reserved. No part of this publication may be reproduced,
+stored in a retrieval system, or transmitted, in any form or by any means,
+electronic, mechanical, photocopying, recording or otherwise, without the
+prior written permission of the publisher. Printed in the United States
+of America. Published simultaneously in Canada.
+<P>Authors: Jackie Neider, Tom Davis, and Mason Woo
+<P>Sponsoring Editor: David Rogelberg
+<P>Project Editor: Joanne Clapp Fullagar
+<P>Cover Image: Thad Beier
+<P>Cover Design: Jean Seal
+<P>Text Design: Electric Ink, Ltd., and Kay Maitz
+<P>Set in 10-point Stone Serif
+<P>ISBN 0-201-63274-8
+<P>First Printing, 1993
+<P>123456789-AL-9695949392
+<HR>
+<H1>
+About This Guide</H1>
+The OpenGL graphics system is a software interface to graphics hardware.
+(The GL stands for Graphics Library.) It allows you to create interactive
+programs that produce color images of moving three-dimensional objects.
+With OpenGL, you can control computer-graphics technology to produce realistic
+pictures or ones that depart from reality in imaginative ways. This guide
+explains how to program with the OpenGL graphics system to deliver the
+visual effect you want.&nbsp;
+<HR>
+<H2>
+What This Guide Contains</H2>
+This guide has the ideal number of chapters: 13. The first six chapters
+present basic information that you need to understand to be able to draw
+a properly colored and lit three-dimensional object on the screen:
+<UL>Chapter 1, "Introduction to OpenGL," provides a glimpse into the kinds
+of things OpenGL can do. It also presents a simple OpenGL program and explains
+essential programming details you need to know for subsequent chapters.
+<BR>&nbsp;
+<P>Chapter 2, "Drawing Geometric Objects," explains how to create a three-dimensional
+geometric description of an object that is eventually drawn on the screen.
+<BR>&nbsp;
+<P>Chapter 3, "Viewing," describes how such three-dimensional models are
+transformed before being drawn onto a two-dimensional screen. You can control
+these transformations to show a particular view of a model.
+<BR>&nbsp;
+<P>Chapter 4, "Display Lists," discusses how to store a series of OpenGL
+commands for execution at a later time. You'll want to use this feature
+to increase the performance of your OpenGL program.
+<BR>&nbsp;
+<P>Chapter 5, "Color," describes how to specify the color and shading method
+used to draw an object.
+<BR>&nbsp;
+<P>Chapter 6, "Lighting," explains how to control the lighting conditions
+surrounding an object and how that object responds to light (that is, how
+it reflects or absorbs light). Lighting is an important topic, since objects
+usually don't look three-dimensional until they're lit.</UL>
+The remaining chapters explain how to add sophisticated features to your
+three-dimensional scene. You might choose not to take advantage of many
+of these features until you're more comfortable with OpenGL. Particularly
+advanced topics are noted in the text where they occur.
+<UL>Chapter 7, "Blending, Antialiasing, and Fog," describes techniques
+essential to creating a realistic scene - alpha blending (which allows
+you to create transparent objects), antialiasing, and atmospheric effects
+(such as fog or smog).
+<BR>&nbsp;
+<P>Chapter 8, "Drawing Pixels, Bitmaps, Fonts, and Images," discusses how
+to work with sets of two-dimensional data as bitmaps or images. One typical
+use for bitmaps is to describe characters in fonts.
+<BR>&nbsp;
+<P>Chapter 9, "Texture Mapping," explains how to map one- and two-dimensional
+images called textures onto three-dimensional objects. Many marvelous effects
+can be achieved through texture mapping.
+<BR>&nbsp;
+<P>Chapter 10, "The Framebuffer," describes all the possible buffers that
+can exist in an OpenGL implementation and how you can control them. You
+can use the buffers for such effects as hidden-surface elimination, stenciling,
+masking, motion blur, and depth-of-field focusing.
+<BR>&nbsp;
+<P>Chapter 11, "Evaluators and NURBS," gives an introduction to advanced
+techniques for efficiently generating curves or surfaces.
+<BR>&nbsp;
+<P>Chapter 12, "Selection and Feedback," explains how you can use OpenGL's
+selection mechanism to select an object on the screen. It also explains
+the feedback mechanism, which allows you to collect the drawing information
+OpenGL produces rather than having it be used to draw on the screen.
+<BR>&nbsp;
+<P>Chapter 13, "Now That You Know," describes how to use OpenGL in several
+clever and unexpected ways to produce interesting results. These techniques
+are drawn from years of experience with the technological precursor to
+OpenGL, the Silicon Graphics IRIS Graphics Library.</UL>
+In addition, there are several appendices that you will likely find useful:
+<UL>Appendix A, "Order of Operations," gives a technical overview of the
+operations OpenGL performs, briefly describing them in the order in which
+they occur as an application executes.
+<BR>&nbsp;
+<P>Appendix B, "OpenGL State Variables," lists the state variables that
+OpenGL maintains and describes how to obtain their values.
+<BR>&nbsp;
+<P>Appendix C, "The OpenGL Utility Library," briefly describes the routines
+available in the OpenGL Utility Library.
+<BR>&nbsp;
+<P>Appendix D, "The OpenGL Extension to the X Window System," briefly describes
+the routines available in the OpenGL extension to the X Window System.
+<BR>&nbsp;
+<P>Appendix E, "The OpenGL Programming Guide Auxiliary Library," discusses
+a small C code library that was written for this book to make code examples
+shorter and more comprehensible.
+<BR>&nbsp;
+<P>Appendix F, "Calculating Normal Vectors," tells you how to calculate
+normal vectors for different types of geometric objects.
+<BR>&nbsp;
+<P>Appendix G, "Homogeneous Coordinates and Transformation Matrices," explains
+some of the mathematics behind matrix transformations.
+<BR>&nbsp;
+<P>Appendix H, "Programming Tips," lists some programming tips based on
+the intentions of the designers of OpenGL that you might find useful.
+<BR>&nbsp;
+<P>Appendix I, "OpenGL Invariance," describes the pixel-exact invariance
+rules that OpenGL implementations follow.
+<BR>&nbsp;
+<P>Appendix J, "Color Plates," contains the color plates that appear in
+the printed version of this guide.</UL>
+Finally, an extensive Glossary defines the key terms used in this guide.
+<HR>
+<H2>
+How to Obtain the Sample Code</H2>
+This guide contains many sample programs to illustrate the use of particular
+OpenGL programming techniques. These programs make use of a small auxiliary
+library that was written for this guide. The section "OpenGL-related Libraries"
+gives more information about this auxiliary library. You can obtain the
+source code for both the sample programs and the auxiliary library for
+free via ftp (file-transfer protocol) if you have access to the Internet.
+<P>First, use ftp to go to the host sgigate.sgi.com, and use <B>anonymous</B>
+as your user name and <I>your_name</I>@<I>machine</I> as the password.
+Then type the following:
+<PRE>cd pub/opengl
+binary
+get opengl.tar.Z
+bye</PRE>
+The file you receive is a compressed <I>tar</I> archive. To restore the
+files, type:
+<PRE>uncompress opengl.tar
+tar xf opengl.tar</PRE>
+The sample programs and auxiliary library are created as subdirectories
+from wherever you are in the file directory structure.
+<P>Many implementations of OpenGL might also include the code samples and
+auxiliary library as part of the system. This source code is probably the
+best source for your implementation, because it might have been optimized
+for your system. Read your machine-specific OpenGL documentation to see
+where the code samples can be found.&nbsp;
+<HR>
+<H2>
+What You Should Know Before Reading This Guide</H2>
+This guide assumes only that you know how to program in the C language
+and that you have some background in mathematics (geometry, trigonometry,
+linear algebra, calculus, and differential geometry). Even if you have
+little or no experience with computer-graphics technology, you should be
+able to follow most of the discussions in this book. Of course, computer
+graphics is a huge subject, so you may want to enrich your learning experience
+with supplemental reading:
+<UL><I>Computer Graphics: Principles and Practice</I> by James D. Foley,
+Andries van Dam, Steven K. Feiner, and John F. Hughes (Reading, Mass.:
+Addison-Wesley Publishing Co.) - This book is an encyclopedic treatment
+of the subject of computer graphics. It includes a wealth of information
+but is probably best read after you have some experience with the subject.
+<BR>&nbsp;
+<P><I>3D Computer Graphics: A User's Guide for Artists and Designers</I>
+by Andrew S. Glassner (New York: Design Press) - This book is a nontechnical,
+gentle introduction to computer graphics. It focuses on the visual effects
+that can be achieved rather than on the techniques needed to achieve them.</UL>
+Once you begin programming with OpenGL, you might want to obtain the <I>OpenGL
+Reference Manual</I> by the OpenGL Architecture Review Board (Reading,
+Mass.: Addison-Wesley Publishing Co., 1993), which is designed as a companion
+volume to this guide. The <I>Reference Manual</I> provides a technical
+view of how OpenGL operates on data that describes a geometric object or
+an image to produce an image on the screen. It also contains full descriptions
+of each set of related OpenGL commands - the parameters used by the commands,
+the default values for those parameters, and what the commands accomplish.
+<P>"OpenGL" is really a hardware-independent specification of a programming
+interface. You use a particular implementation of it on a particular kind
+of hardware. This guide explains how to program with <I>any</I> OpenGL
+implementation. However, since implementations may vary slightly - in performance
+and in providing additional, optional features, for example - you might
+want to investigate whether supplementary documentation is available for
+the particular implementation you're using. In addition, you might have
+OpenGL-related utilities, toolkits, programming and debugging support,
+widgets, sample programs, and demos available to you with your system.&nbsp;
+<HR>
+<H2>
+Style Conventions</H2>
+These style conventions are used in this guide:
+<UL><B>Bold</B> - Command and routine names, and matrices
+<BR>&nbsp;
+<P><I>Italics</I> - Variables, arguments, parameter names, spatial dimensions,
+and matrix components
+<BR>&nbsp;
+<P>Regular - Enumerated types and defined constants</UL>
+Code examples are set off from the text in a monospace font, and command
+summaries are shaded with gray boxes.
+<P>Topics that are particularly complicated - and that you can skip if
+you're new to OpenGL or computer graphics - are marked with the Advanced
+icon. This icon can apply to a single paragraph or to an entire section
+or chapter.
+<P><B>Advanced</B>
+<P>Exercises that are left for the reader are marked with the Try This
+icon.
+<P>Try This
+<HR>
+<H2>
+Acknowledgments</H2>
+No book comes into being without the help of many people. Probably the
+largest debt the authors owe is to the creators of OpenGL itself. The OpenGL
+team at Silicon Graphics has been led by Kurt Akeley, Bill Glazier, Kipp
+Hickman, Phil Karlton, Mark Segal, Kevin P. Smith, and Wei Yen. The members
+of the OpenGL Architecture Review Board naturally need to be counted among
+the designers of OpenGL: Dick Coulter and John Dennis of Digital Equipment
+Corporation; Jim Bushnell and Linas Vepstas of International Business Machines,
+Corp.; Murali Sundaresan and Rick Hodgson of Intel; and On Lee and Chuck
+Whitmore of Microsoft. Other early contributors to the design of OpenGL
+include Raymond Drewry of Gain Technology, Inc., Fred Fisher of Digital
+Equipment Corporation, and Randi Rost of Kubota Pacific Computer, Inc.
+Many other Silicon Graphics employees helped refine the definition and
+functionality of OpenGL, including Momi Akeley, Allen Akin, Chris Frazier,
+Paul Ho, Simon Hui, Lesley Kalmin, Pierre Tardiff, and Jim Winget.
+<P>Many brave souls volunteered to review this book: Kurt Akeley, Gavin
+Bell, Sam Chen, Andrew Cherenson, Dan Fink, Beth Fryer, Gretchen Helms,
+David Marsland, Jeanne Rich, Mark Segal, Kevin P. Smith, and Josie Wernecke
+from Silicon Graphics; David Niguidula, Coalition of Essential Schools,
+Brown University; John Dennis and Andy Vesper, Digital Equipment Corporation;
+Chandrasekhar Narayanaswami and Linas Vepstas, International Business Machines,
+Corp.; Randi Rost, Kubota Pacific; On Lee, Microsoft Corp.; Dan Sears;
+Henry McGilton, Trilithon Software; and Paula Womak.
+<P>Assembling the set of colorplates was no mean feat. The sequence of
+plates based on the cover image (Figure J-1 through Figure J-9 ) was created
+by Thad Beier of Pacific Data Images, Seth Katz of Xaos Tools, Inc., and
+Mason Woo of Silicon Graphics. Figure J-10 through Figure J-32 are snapshots
+of programs created by Mason. Gavin Bell, Kevin Goldsmith, Linda Roy, and
+Mark Daly (all of Silicon Graphics) created the fly-through program used
+for Figure J-34 . The model for Figure J-35 was created by Barry Brouillette
+of Silicon Graphics; Doug Voorhies, also of Silicon Graphics, performed
+some image processing for the final image. Figure J-36 was created by John
+Rohlf and Michael Jones, both of Silicon Graphics. Figure J-37 was created
+by Carl Korobkin of Silicon Graphics. Figure J-38 is a snapshot from a
+program written by Gavin Bell with contributions from the Inventor team
+at Silicon Graphics - Alain Dumesny, Dave Immel, David Mott, Howard Look,
+Paul Isaacs, Paul Strauss, and Rikk Carey. Figure J-39 and Figure J-40
+are snapshots from a visual simulation program created by the Silicon Graphics
+IRIS Performer team - Craig Phillips, John Rohlf, Sharon Fischler, Jim
+Helman, and Michael Jones - from a database produced for Silicon Graphics
+by Paradigm Simulation, Inc. Figure J-41 is a snapshot from skyfly, the
+precursor to Performer, which was created by John Rohlf, Sharon Fischler,
+and Ben Garlick, all of Silicon Graphics.
+<P>Several other people played special roles in creating this book. If
+we were to list other names as authors on the front of this book, Kurt
+Akeley and Mark Segal would be there, as honorary yeoman. They helped define
+the structure and goals of the book, provided key sections of material
+for it, reviewed it when everybody else was too tired of it to do so, and
+supplied that all-important humor and support throughout the process. Kay
+Maitz provided invaluable production and design assistance. Kathy Gochenour
+very generously created many of the illustrations for this book. Tanya
+Kucak copyedited the manuscript, in her usual thorough and professional
+style.
+<P>And now, each of the authors would like to take the 15 minutes that
+have been allotted to them by Andy Warhol to say thank you.
+<P>I'd like to thank my managers at Silicon Graphics - Dave Larson and
+Way Ting - and the members of my group - Patricia Creek, Arthur Evans,
+Beth Fryer, Jed Hartman, Ken Jones, Robert Reimann, Eve Stratton (aka Margaret-Anne
+Halse), John Stearns, and Josie Wernecke - for their support during this
+lengthy process. Last but surely not least, I want to thank those whose
+contributions toward this project are too deep and mysterious to elucidate:
+Yvonne Leach, Kathleen Lancaster, Caroline Rose, Cindy Kleinfeld, and my
+parents, Florence and Ferdinand Neider.
+<P>&nbsp;- JLN
+<P>In addition to my parents, Edward and Irene Davis, I'd like to thank
+the people who taught me most of what I know about computers and computer
+graphics - Doug Engelbart and Jim Clark.
+<P>&nbsp;- TRD
+<P>I'd like to thank the many past and current members of Silicon Graphics
+whose accommodation and enlightenment were essential to my contribution
+to this book: Gerald Anderson, Wendy Chin, Bert Fornaciari, Bill Glazier,
+Jill Huchital, Howard Look, Bill Mannel, David Marsland, Dave Orton, Linda
+Roy, Keith Seto, and Dave Shreiner. Very special thanks to Karrin Nicol
+and Leilani Gayles of SGI for their guidance throughout my career. I also
+bestow much gratitude to my teammates on the Stanford B ice hockey team
+for periods of glorious distraction throughout the writing of this book.
+Finally, I'd like to thank my family, especially my mother, Bo, and my
+late father, Henry.
+<P>&nbsp;- MW
+<P>
+<HR>
+<CENTER>
+<H2>
+HTML Edition Information</H2></CENTER>
+
+<P><BR><A NAME="html"></A>This book is freely accessible on the Internet
+at <A HREF="http://arctic.eng.iastate.edu:88/SGI_Developer/OpenGL_PG/">http://arctic.eng.iastate.edu:88/SGI_Developer/OpenGL_PG/</A>.
+However, it is presented in a format unsuitable for download and off-line
+browsing, since it is accessed and cross-referenced using cgi scripts.
+I manually downloaded and edited all the text and figures, removed most
+of the links in the text and reformatted the chapters into single files.
+None of this was made for profit or for the purpose of violating copyright
+- the book was online, and I just made it easier to use and download. All
+the original copyright still remains.
+<P>- UnreaL.
+<BR>
+<HR>
+</BODY>
+</HTML>

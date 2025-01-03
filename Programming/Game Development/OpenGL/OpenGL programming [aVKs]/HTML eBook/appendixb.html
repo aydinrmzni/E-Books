@@ -1,0 +1,3094 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Appendix B - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<HR>
+<H1>
+Appendix B<BR>
+OpenGL State Variables</H1>
+This appendix lists the queryable OpenGL state variables, their default
+values, and the commands for obtaining the values of these variables. It
+also describes OpenGL's error handling facility, and how to save and restore
+sets of state variables. The <I>OpenGL Reference Manual</I> contains detailed
+information on all the commands and constants discussed in this appendix.
+This appendix has these major sections:
+<UL>"The Query Commands"
+<BR>&nbsp;
+<P>"Error Handling"
+<BR>&nbsp;
+<P>"Saving and Restoring Sets of State Variables"
+<BR>&nbsp;
+<P>"OpenGL State Variables"</UL>
+
+<HR>
+<H2>
+<A NAME="X"></A>The Query Commands</H2>
+There are four commands for obtaining simple state variables, and one for
+determining whether a particular state is enabled or disabled.void <B>glGetBooleanv</B>(GLenum
+<B>pname</B>, GLboolean *<B>params</B>);
+<BR>void <B>glGetIntegerv</B>(GLenum <B>pname</B>, GLint *<B>params</B>);
+<BR>void <B>glGetFloatv</B>(GLenum <B>pname</B>, GLfloat *<B>params</B>);
+<BR>void <B>glGetDoublev</B>(GLenum <B>pname</B>, GLdouble *<B>params</B>);
+<P>Obtains Boolean, integer, floating-point, or double-precision state
+variables. The <B>pname</B> argument is a symbolic constant indicating
+the state variable to return, and <B>params</B> is a pointer to an array
+of the indicated type in which to place the returned data. The possible
+values for <B>pname</B> are listed in the tables in "OpenGL State Variables."
+A type conversion is performed if necessary to return the desired variable
+as the requested data type.
+<P>GLboolean <B>glIsEnabled</B>(GLenum <B>cap</B>)
+<P>Returns GL_TRUE if the mode specified by <B>cap</B> is enabled; otherwise,
+returns GL_FALSE. The possible values for <B>cap</B> are listed in the
+tables in "OpenGL State Variables"
+<P>Other specialized commands return specific state variables. The prototypes
+for these commands are listed here; to find out when you need to use these
+commands, use the tables in "OpenGL State Variables" Also see the <I>OpenGL
+Reference Manual</I>. OpenGL's error handling facility and the <B>glGetError()</B>
+command are described in more detail in the next section.
+<DL>
+<DT>
+void <B>glGetClipPlane</B>(GLenum <B>plane</B>, GLdouble *<B>equation</B>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>GLenum <B>glGetError</B>(void);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glGetLight</B>{if}<B>v</B>(GLenum <B>light</B>, GLenum <B>pname</B>,
+<B>TYPE</B> *<B>params</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glGetMap</B>{ifd}<B>v</B>(GLenum <B>target</B>, GLenum <B>query</B>,
+<B>TYPE</B> *<B>v</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glGetMaterial</B>{if}<B>v</B>(GLenum <B>face</B>, GLenum <B>pname</B>,
+<B>TYPE</B> *<B>params</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glGetPixelMap</B>{f ui us}<B>v</B>(GLenum <B>map</B>, <B>TYPE</B>
+*<B>values</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glGetPolygonStipple</B>(GLubyte *<B>mask</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>const GLubyte * <B>glGetString</B>(GLenum <B>name</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glGetTexEnv</B>{if}<B>v</B>(GLenum <B>target</B>, GLenum <B>pname</B>,
+<B>TYPE</B> *<B>params</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glGetTexGen</B>{ifd}<B>v</B>(GLenum <B>coord</B>, GLenum <B>pname</B>,
+<B>TYPE</B> *<B>params</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glGetTexImage</B>(GLenum <B>target</B>, GLint <B>level</B>,
+GLenum <B>format</B>, GLenum <B>type</B>, GLvoid *<B>pixels</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glGetTexLevelParameter</B>{if}<B>v</B>(GLenum <B>target</B>,
+GLint <B>level</B>, GLenum <B>pname</B>, <B>TYPE</B> *<B>params</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>glGetTexParameter</B>{if}<B>v</B>(GLenum <B>target</B>, GLenum
+<B>pname</B>, <B>TYPE</B> *<B>params</B>);
+<DD>
+</DD>
+</DL>
+
+<HR>
+<H2>
+Error Handling</H2>
+When OpenGL detects an error, it records a current error code. The command
+that caused the error is ignored, so it has no effect on OpenGL state or
+on the framebuffer contents. (If the error recorded was GL_OUT_OF_MEMORY,
+however, the results of the command are undefined.) Once recorded, the
+current error code isn't cleared - that is, additional errors aren't recorded
+- until you call the query command <B>glGetError()</B>, which returns the
+current error code. In distributed implementations of OpenGL, there might
+be multiple current error codes, each of which remains set until queried.
+Once you've queried all the current error codes, or if there's no error,
+<B>glGetError()</B> returns GL_NO_ERROR. Thus, if you obtain an error code,
+it's good practice to continue to call <B>glGetError()</B> until GL_NO_ERROR
+is returned to be sure you've discovered all the errors. Table B-1 lists
+the defined OpenGL error codes.
+<P>You can use the GLU routine <B>gluErrorString()</B> to obtain a descriptive
+string corresponding to the error code passed in. This routine is described
+in more detail in "Describing Errors." Note that GLU routines often return
+error values if an error is detected. Also, the GLU defines the error codes
+GLU_INVALID_ENUM, GLU_INVALID_VALUE, and GLU_OUT_OF_MEMORY, which have
+the same meaning as the related OpenGL codes.
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-1 : </B>OpenGL Error Codes</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Error Code</TH>
+
+<TH>Description</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INVALID_ENUM</TD>
+
+<TD>GLenum argument out of range</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INVALID_VALUE</TD>
+
+<TD>Numeric argument out of range</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INVALID_OPERATION</TD>
+
+<TD>Operation illegal in current state</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STACK_OVERFLOW</TD>
+
+<TD>Command would cause a stack overflow</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STACK_UNDERFLOW</TD>
+
+<TD>Command would cause a stack underflow</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_OUT_OF_MEMORY</TD>
+
+<TD>Not enough memory left to execute command</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H2>
+Saving and Restoring Sets of State Variables</H2>
+You can save and restore the values of a collection of state variables
+on an attribute stack with the commands <B>glPushAttrib()</B> and <B>glPopAttrib()</B>.
+The attribute stack has a depth of at least 16, and the actual depth can
+be obtained using GL_MAX_ATTRIB_STACK_DEPTH with <B>glGetIntegerv()</B>.
+Pushing a full stack or popping an empty one generates an error.
+<P>In general, it's faster to use <B>glPushAttrib()</B> and <B>glPopAttrib()</B>
+than to get and restore the values yourself. Some values might be pushed
+and popped in the hardware, and saving and restoring them might be expensive.
+Also, if you're operating on a remote client, all the attribute data has
+to be transferred across the network connection and back as it's saved
+and restored. However, your OpenGL implementation keeps the attribute stack
+on the server, avoiding unnecessary network delays. void <B>glPushAttrib</B>(GLbitfield
+<B>mask</B>);
+<P>Saves all the attributes indicated by bits in <B>mask</B> by pushing
+them onto the attribute stack. Table B-2 lists the possible mask bits that
+can be logically ORed together to save any combination of attributes. Each
+bit corresponds to a collection of individual state variables. For example,
+GL_LIGHTING_BIT refers to all the state variables related to lighting,
+which include the current material color, the ambient, diffuse, specular,
+and emitted light, a list of the lights that are enabled, and the directions
+of the spotlights. When <B>glPopAttrib()</B> is called, all those variables
+are restored. To find out exactly which attributes are saved for particular
+mask values, see the tables in "OpenGL State Variables."
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-2 : </B>Attribute Groups</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Mask Bit</TH>
+
+<TH>Attribute Group</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ACCUM_BUFFER_BIT</TD>
+
+<TD>accum-buffer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ALL_ATTRIB_BITS</TD>
+
+<TD>--</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_COLOR_BUFFER_BIT</TD>
+
+<TD>color-buffer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_BIT</TD>
+
+<TD>current</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DEPTH_BUFFER_BIT</TD>
+
+<TD>depth-buffer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ENABLE_BIT</TD>
+
+<TD>enable</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_EVAL_BIT</TD>
+
+<TD>eval</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FOG_BIT</TD>
+
+<TD>fog</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_HINT_BIT</TD>
+
+<TD>hint</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LIGHTING_BIT&nbsp;</TD>
+
+<TD>lighting</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_BIT</TD>
+
+<TD>line</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LIST_BIT</TD>
+
+<TD>list</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MODE_BIT</TD>
+
+<TD>pixel</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POINT_BIT</TD>
+
+<TD>point</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POLYGON_BIT</TD>
+
+<TD>polygon</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POLYGON_STIPPLE_BIT</TD>
+
+<TD>polygon-stipple</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SCISSOR_BIT</TD>
+
+<TD>scissor</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_BUFFER_BIT</TD>
+
+<TD>stencil-buffer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_BIT</TD>
+
+<TD>texture</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TRANSFORM_BIT</TD>
+
+<TD>transform</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_VIEWPORT_BIT&nbsp;</TD>
+
+<TD>viewport</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>void <B>glPopAttrib</B>(void);
+<P>Restores the values of those state variables that were saved with the
+last <B>glPushAttrib()</B>.
+<P>
+<HR>
+<H2>
+OpenGL State Variables</H2>
+The following pages contain tables that list the names of queryable state
+variables. For each variable, the tables list a description of it, its
+attribute group, its initial or minimum value, and the suggested <B>glGet*()</B>
+command to use for obtaining it. State variables that can be obtained using
+<B>glGetBooleanv()</B>, <B>glGetIntegerv()</B>, <B>glGetFloatv()</B>, or
+<B>glGetDoublev()</B> are listed with just one of these commands - the
+one that's most appropriate given the type of data to be returned. These
+state variables can't be obtained using <B>glIsEnabled()</B>. However,
+state variables for which <B>glIsEnabled()</B> is listed as the query command
+can also be obtained using <B>glGetBooleanv()</B>, <B>glGetIntegerv()</B>,
+<B>glGetFloatv()</B>, and <B>glGetDoublev()</B>. State variables for which
+any other command is listed as the query command can be obtained only by
+using that command. If no attribute group is listed, the variable doesn't
+belong to any group. All queryable state variables except the implementation-dependent
+ones have initial values. If no initial value is listed, you need to consult
+the section where that variable is discussed (or the <I>OpenGL Reference
+Manual</I>) to determine its initial value.
+<P>
+<HR>
+<H3>
+Current Values and Associated Data</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-3 : </B>State Variables for Current Values
+and Associated Data</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_COLOR</TD>
+
+<TD>Current color</TD>
+
+<TD>current</TD>
+
+<TD>1, 1, 1, 1</TD>
+
+<TD>glGetIntegerv() , glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_INDEX</TD>
+
+<TD>Current color index</TD>
+
+<TD>current</TD>
+
+<TD>1</TD>
+
+<TD>glGetIntegerv() , glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_TEXTURE_COORDS</TD>
+
+<TD>Current texture coordinates</TD>
+
+<TD>current</TD>
+
+<TD>0, 0, 0, 1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_NORMAL</TD>
+
+<TD>Current normal</TD>
+
+<TD>current</TD>
+
+<TD>0, 0, 1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_RASTER_POSITION</TD>
+
+<TD>Current raster position</TD>
+
+<TD>current</TD>
+
+<TD>0, 0, 0, 1</TD>
+
+<TD>glGetFloatv()
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_RASTER_DISTANCE</TD>
+
+<TD>Current raster distance</TD>
+
+<TD>current</TD>
+
+<TD>0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_RASTER_COLOR</TD>
+
+<TD>Color associated with raster position</TD>
+
+<TD>current</TD>
+
+<TD>1, 1, 1, 1</TD>
+
+<TD>glGetIntegerv() , glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_RASTER_INDEX</TD>
+
+<TD>Color index associated with raster position</TD>
+
+<TD>current</TD>
+
+<TD>1</TD>
+
+<TD>glGetIntegerv() , glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_RASTER_TEXTURE_ COORDS</TD>
+
+<TD>Texture coordinates associated with raster position</TD>
+
+<TD>current</TD>
+
+<TD>0, 0, 0, 1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CURRENT_RASTER_POSITION_ VALID</TD>
+
+<TD>Raster position valid bit</TD>
+
+<TD>current</TD>
+
+<TD>GL_TRUE</TD>
+
+<TD>glGetBooleanv( )</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_EDGE_FLAG</TD>
+
+<TD>Edge flag</TD>
+
+<TD>current</TD>
+
+<TD>GL_TRUE</TD>
+
+<TD>glGetBooleanv( )</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Transformation</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-4 : </B>Transformation State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MODELVIEW_MATRIX</TD>
+
+<TD>Modelview matrix stack</TD>
+
+<TD>--</TD>
+
+<TD>Identity</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PROJECTION_MATRIX</TD>
+
+<TD>Projection matrix stack</TD>
+
+<TD>--</TD>
+
+<TD>Identity</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_MATRIX</TD>
+
+<TD>Texture matrix stack</TD>
+
+<TD>--</TD>
+
+<TD>Identity</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_VIEWPORT</TD>
+
+<TD>Viewport origin and extent</TD>
+
+<TD>viewport</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DEPTH_RANGE</TD>
+
+<TD>Depth range near and far</TD>
+
+<TD>viewport</TD>
+
+<TD>0, 1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MODELVIEW_STACK_DEPTH</TD>
+
+<TD>Modelview matrix stack pointer</TD>
+
+<TD>--</TD>
+
+<TD>1</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PROJECTION_STACK_DEPTH</TD>
+
+<TD>Projection matrix stack pointer</TD>
+
+<TD>--</TD>
+
+<TD>1</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_STACK_DEPTH</TD>
+
+<TD>Texture matrix stack pointer</TD>
+
+<TD>--</TD>
+
+<TD>1</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MATRIX_MODE</TD>
+
+<TD>Current matrix mode</TD>
+
+<TD>transform</TD>
+
+<TD>GL_MODELVI EW</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_NORMALIZE</TD>
+
+<TD>Current normal normalization on/off</TD>
+
+<TD>transform/ enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CLIP_PLANE<B>i</B></TD>
+
+<TD>User clipping plane coefficients</TD>
+
+<TD>transform</TD>
+
+<TD>0, 0, 0, 0</TD>
+
+<TD>glGetClipPlane()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CLIP_PLANE<B>i</B></TD>
+
+<TD><B>i</B>th user clipping plane enabled</TD>
+
+<TD>transform/ enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Coloring</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-5 : </B>Coloring State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FOG_COLOR</TD>
+
+<TD>Fog color</TD>
+
+<TD>fog</TD>
+
+<TD>0, 0, 0, 0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FOG_INDEX</TD>
+
+<TD>Fog index</TD>
+
+<TD>fog</TD>
+
+<TD>0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FOG_DENSITY</TD>
+
+<TD>Exponential fog density</TD>
+
+<TD>fog</TD>
+
+<TD>1.0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FOG_START</TD>
+
+<TD>Linear fog start</TD>
+
+<TD>fog</TD>
+
+<TD>0.0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FOG_END</TD>
+
+<TD>Linear fog end</TD>
+
+<TD>fog</TD>
+
+<TD>1.0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FOG_MODE</TD>
+
+<TD>Fog mode</TD>
+
+<TD>fog</TD>
+
+<TD>GL_EXP</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FOG</TD>
+
+<TD>True if fog enabled</TD>
+
+<TD>fog/enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SHADE_MODEL</TD>
+
+<TD>glShadeModel() setting</TD>
+
+<TD>lighting</TD>
+
+<TD>GL_SMOOTH</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Lighting</H3>
+See also Table 6-1 and Table 6-2 for initial values.
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-6 : </B>Lighting State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LIGHTING</TD>
+
+<TD>True if lighting is enabled</TD>
+
+<TD>lighting /enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_COLOR_MATERIAL</TD>
+
+<TD>True if color tracking is enabled</TD>
+
+<TD>lighting</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_COLOR_MATERIAL_PARAME TER</TD>
+
+<TD>Material properties tracking current color</TD>
+
+<TD>lighting</TD>
+
+<TD>GL_AMBIENT_
+<BR>AND_DIFFUSE</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_COLOR_MATERIAL_FACE</TD>
+
+<TD>Face(s) affected by color tracking</TD>
+
+<TD>lighting</TD>
+
+<TD>GL_FRONT_
+<BR>AND_BACK</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_AMBIENT</TD>
+
+<TD>Ambient material color</TD>
+
+<TD>lighting</TD>
+
+<TD>(0.2, 0.2, 0.2, 1.0)</TD>
+
+<TD>glGetMaterialfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DIFFUSE</TD>
+
+<TD>Diffuse material color</TD>
+
+<TD>lighting</TD>
+
+<TD>(0.8, 0.8, 0.8, 1.0)</TD>
+
+<TD>glGetMaterialfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SPECULAR</TD>
+
+<TD>Specular material color</TD>
+
+<TD>lighting</TD>
+
+<TD>(0.0, 0.0, 0.0, 1.0)</TD>
+
+<TD>glGetMaterialfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_EMISSION</TD>
+
+<TD>Emissive material color</TD>
+
+<TD>lighting</TD>
+
+<TD>(0.0, 0.0, 0.0, 1.0)</TD>
+
+<TD>glGetMaterialfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SHININESS</TD>
+
+<TD>Specular exponent of material</TD>
+
+<TD>lighting</TD>
+
+<TD>0.0</TD>
+
+<TD>glGetMaterialfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LIGHT_MODEL_AMBIENT</TD>
+
+<TD>Ambient scene color</TD>
+
+<TD>lighting</TD>
+
+<TD>(0.2, 0.2, 0.2, 1.0)</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LIGHT_MODEL_LOCAL_VIE WER</TD>
+
+<TD>Viewer is local</TD>
+
+<TD>lighting</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glGetBooleanv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LIGHT_MODEL_TWO_SIDE</TD>
+
+<TD>Use two-sided lighting</TD>
+
+<TD>lighting</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glGetBooleanv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_AMBIENT</TD>
+
+<TD>Ambient intensity of light <B>i</B></TD>
+
+<TD>lighting</TD>
+
+<TD>(0.0,0.0,0.0,1.0)</TD>
+
+<TD>glGetLightfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DIFFUSE</TD>
+
+<TD>Diffuse intensity of light <B>i</B></TD>
+
+<TD>lighting</TD>
+
+<TD>--</TD>
+
+<TD>glGetLightfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SPECULAR</TD>
+
+<TD>Specular intensity of light <B>i</B></TD>
+
+<TD>lighting</TD>
+
+<TD>--</TD>
+
+<TD>glGetLightfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POSITION</TD>
+
+<TD>Position of light <B>i</B></TD>
+
+<TD>lighting</TD>
+
+<TD>(0.0, 0.0, 1.0, 0.0)</TD>
+
+<TD>glGetLightfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CONSTANT_ATTENUATION</TD>
+
+<TD>Constant attenuation factor</TD>
+
+<TD>lighting</TD>
+
+<TD>1.0</TD>
+
+<TD>glGetLightfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINEAR_ATTENUATION</TD>
+
+<TD>Linear attenuation factor</TD>
+
+<TD>lighting</TD>
+
+<TD>0.0</TD>
+
+<TD>glGetLightfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_QUADRATIC_ATTENUATION</TD>
+
+<TD>Quadratic attenuation factor</TD>
+
+<TD>lighting</TD>
+
+<TD>0.0</TD>
+
+<TD>glGetLightfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SPOT_DIRECTION</TD>
+
+<TD>Spotlight direction of light <B>i</B></TD>
+
+<TD>lighting</TD>
+
+<TD>(0.0, 0.0, -1.0)
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;</TD>
+
+<TD>glGetLightfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SPOT_EXPONENT</TD>
+
+<TD>Spotlight exponent of light <B>i</B></TD>
+
+<TD>lighting</TD>
+
+<TD>0.0</TD>
+
+<TD>glGetLightfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SPOT_CUTOFF</TD>
+
+<TD>Spotlight angle of light <B>i</B></TD>
+
+<TD>lighting</TD>
+
+<TD>180.0</TD>
+
+<TD>glGetLightfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LIGHT<B>i</B></TD>
+
+<TD>True if light <B>i</B> enabled</TD>
+
+<TD>lighting /enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_COLOR_INDEXES</TD>
+
+<TD>ca, cd, and cs for color-index lighting</TD>
+
+<TD>lighting /enable</TD>
+
+<TD>0, 1, 1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Rasterization</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-7 : </B>Rasterization State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POINT_SIZE</TD>
+
+<TD>Point size</TD>
+
+<TD>point</TD>
+
+<TD>1.0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POINT_SMOOTH</TD>
+
+<TD>Point antialiasing on</TD>
+
+<TD>point/enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_WIDTH</TD>
+
+<TD>Line width</TD>
+
+<TD>line</TD>
+
+<TD>1.0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_SMOOTH</TD>
+
+<TD>Line antialiasing on</TD>
+
+<TD>line/enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_STIPPLE_PATTERN</TD>
+
+<TD>Line stipple</TD>
+
+<TD>line</TD>
+
+<TD>1's</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_STIPPLE_REPEAT</TD>
+
+<TD>Line stipple repeat</TD>
+
+<TD>line</TD>
+
+<TD>1</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_STIPPLE</TD>
+
+<TD>Line stipple enable</TD>
+
+<TD>line/enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CULL_FACE</TD>
+
+<TD>Polygon culling enabled</TD>
+
+<TD>polygon/enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_CULL_FACE_MODE</TD>
+
+<TD>Cull front-/back-facing polygons</TD>
+
+<TD>polygon</TD>
+
+<TD>GL_BACK</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FRONT_FACE</TD>
+
+<TD>Polygon front-face CW/CCW indicator</TD>
+
+<TD>polygon</TD>
+
+<TD>GL_CCW</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POLYGON_SMOOTH</TD>
+
+<TD>Polygon antialiasing on</TD>
+
+<TD>polygon/enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POLYGON_MODE</TD>
+
+<TD>Polygon rasterization mode (front and back)</TD>
+
+<TD>polygon</TD>
+
+<TD>GL_FILL</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POLYGON_STIPPLE</TD>
+
+<TD>Polygon stipple enable</TD>
+
+<TD>polygon/enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>--</TD>
+
+<TD>Polygon stipple pattern</TD>
+
+<TD>polygon-stipple</TD>
+
+<TD>1's</TD>
+
+<TD>glGetPolygon-S tipple()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Texturing</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-8 : </B>Texturing State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_<B>x</B></TD>
+
+<TD>True if <B>x</B>-D texturing enabled (<B>x</B> is 1D or 2D)</TD>
+
+<TD>texture/ enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE</TD>
+
+<TD><B>x</B>-D texture image at level of detail <B>i</B></TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetTexImage()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_WIDTH</TD>
+
+<TD><B>x</B>-D texture image <B>i</B>'s width</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetTexLevelParameter()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_HEIGHT</TD>
+
+<TD><B>x</B>-D texture image <B>i</B>'s height</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetTexLevelParameter()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_BORDER</TD>
+
+<TD><B>x</B>-D texture image <B>i</B>'s border width</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetTexLevelParameter()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_COMPONENTS</TD>
+
+<TD>Texture image components</TD>
+
+<TD>--</TD>
+
+<TD>1</TD>
+
+<TD>glGetTexLevelParameter()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_BORDER_COL OR</TD>
+
+<TD>Texture border color</TD>
+
+<TD>texture</TD>
+
+<TD>0, 0, 0, 0</TD>
+
+<TD>glGetTexParameter()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_MIN_FILTER</TD>
+
+<TD>Texture minification function</TD>
+
+<TD>texture</TD>
+
+<TD>GL_NEAREST_ MIPMAP_LINEA R</TD>
+
+<TD>glGetTexParameter()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_MAG_FILTER</TD>
+
+<TD>Texture magnification function</TD>
+
+<TD>texture</TD>
+
+<TD>GL_LINEAR</TD>
+
+<TD>glGetTexParameter()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_WRAP_<B>x</B></TD>
+
+<TD>Texture wrap mode (<B>x</B> is S or T)</TD>
+
+<TD>texture</TD>
+
+<TD>GL_REPEAT</TD>
+
+<TD>glGetTexParameter()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_ENV_MODE</TD>
+
+<TD>Texture application function</TD>
+
+<TD>texture</TD>
+
+<TD>GL_MODULATE</TD>
+
+<TD>glGetTexEnviv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_ENV_COLOR</TD>
+
+<TD>Texture environment color</TD>
+
+<TD>texture</TD>
+
+<TD>0, 0, 0, 0</TD>
+
+<TD>glGetTexEnvfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_GEN_<B>x</B></TD>
+
+<TD>Texgen enabled (<B>x</B> is S, T, R, or Q)</TD>
+
+<TD>texture/ enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_EYE_LINEAR</TD>
+
+<TD>Texgen plane equation coefficients</TD>
+
+<TD>texture</TD>
+
+<TD>--</TD>
+
+<TD>glGetTexGenfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_OBJECT_LINEAR</TD>
+
+<TD>Texgen object linear coefficients</TD>
+
+<TD>texture</TD>
+
+<TD>--</TD>
+
+<TD>glGetTexGenfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TEXTURE_GEN_MODE</TD>
+
+<TD>Function used for texgen</TD>
+
+<TD>texture</TD>
+
+<TD>GL_EYE_LINEA R</TD>
+
+<TD>glGetTexGeniv()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Pixel Operations</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-9 : </B>Pixel Operations</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SCISSOR_TEST</TD>
+
+<TD>Scissoring enabled</TD>
+
+<TD>scissor/enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SCISSOR_BOX</TD>
+
+<TD>Scissor box</TD>
+
+<TD>scissor</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_TEST</TD>
+
+<TD>Stenciling enabled</TD>
+
+<TD>stencil-buffer/ enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_FUNC</TD>
+
+<TD>Stencil function</TD>
+
+<TD>stencil-buffer</TD>
+
+<TD>GL_ALWAYS</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_VALUE_MASK</TD>
+
+<TD>Stencil mask</TD>
+
+<TD>stencil-buffer</TD>
+
+<TD>1's</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_REF</TD>
+
+<TD>Stencil reference value</TD>
+
+<TD>stencil-buffer</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_FAIL</TD>
+
+<TD>Stencil fail action</TD>
+
+<TD>stencil-buffer</TD>
+
+<TD>GL_KEEP</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_PASS_DEPTH_FAI L</TD>
+
+<TD>Stencil depth buffer fail action</TD>
+
+<TD>stencil-buffer</TD>
+
+<TD>GL_KEEP</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_PASS_DEPTH_PAS S</TD>
+
+<TD>Stencil depth buffer pass action</TD>
+
+<TD>stencil-buffer</TD>
+
+<TD>GL_KEEP</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ALPHA_TEST</TD>
+
+<TD>Alpha test enabled</TD>
+
+<TD>color-buffer/e nable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ALPHA_TEST_FUNC</TD>
+
+<TD>Alpha test function</TD>
+
+<TD>color-buffer</TD>
+
+<TD>GL_ALWAYS</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ALPHA_TEST_REF</TD>
+
+<TD>Alpha test reference value</TD>
+
+<TD>color-buffer</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DEPTH_TEST</TD>
+
+<TD>Depth buffer enabled</TD>
+
+<TD>depth-buffer/ enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DEPTH_FUNC</TD>
+
+<TD>Depth buffer test function</TD>
+
+<TD>depth-buffer</TD>
+
+<TD>GL_LESS</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_BLEND</TD>
+
+<TD>Blending enabled</TD>
+
+<TD>color-buffer/e nable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_BLEND_SRC</TD>
+
+<TD>Blending source function</TD>
+
+<TD>color-buffer</TD>
+
+<TD>GL_ONE</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_BLEND_DST</TD>
+
+<TD>Blending destination function</TD>
+
+<TD>color-buffer</TD>
+
+<TD>GL_ZERO</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LOGIC_OP</TD>
+
+<TD>Logical operation enabled</TD>
+
+<TD>color-buffer/e nable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LOGIC_OP_MODE</TD>
+
+<TD>Logical operation function</TD>
+
+<TD>color-buffer</TD>
+
+<TD>GL_COPY</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DITHER</TD>
+
+<TD>Dithering enabled</TD>
+
+<TD>color-buffer/e nable</TD>
+
+<TD>GL_TRUE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Framebuffer Control</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-10 : </B>Framebuffer Control State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DRAW_BUFFER</TD>
+
+<TD>Buffers selected for drawing</TD>
+
+<TD>color-buffer</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INDEX_WRITEMASK</TD>
+
+<TD>Color-index writemask</TD>
+
+<TD>color-buffer</TD>
+
+<TD>1's</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_COLOR_WRITEMASK</TD>
+
+<TD>Color write enables; R, G, B, or A</TD>
+
+<TD>color-buffer</TD>
+
+<TD>GL_TRUE</TD>
+
+<TD>glGetBooleanv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DEPTH_WRITEMASK</TD>
+
+<TD>Depth buffer enabled for writing</TD>
+
+<TD>depth-buffer</TD>
+
+<TD>GL_TRUE</TD>
+
+<TD>glGetBooleanv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_WRITEMASK</TD>
+
+<TD>Stencil-buffer writemask</TD>
+
+<TD>stencil-buffer</TD>
+
+<TD>1's</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_COLOR_CLEAR_VALUE</TD>
+
+<TD>Color-buffer clear value (RGBA mode)</TD>
+
+<TD>color-buffer</TD>
+
+<TD>0, 0, 0, 0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INDEX_CLEAR_VALUE</TD>
+
+<TD>Color-buffer clear value (color-index mode)</TD>
+
+<TD>color-buffer</TD>
+
+<TD>0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DEPTH_CLEAR_VALUE</TD>
+
+<TD>Depth-buffer clear value</TD>
+
+<TD>depth-buffer</TD>
+
+<TD>1</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_CLEAR_VALUE</TD>
+
+<TD>Stencil-buffer clear value</TD>
+
+<TD>stencil-buffer</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ACCUM_CLEAR_VALUE</TD>
+
+<TD>Accumulation-buffer clear value</TD>
+
+<TD>accum-buffer</TD>
+
+<TD>0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Pixels</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-11 : </B>Pixel State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_SWAP_BYTES</TD>
+
+<TD>Value of GL_UNPACK_SWAP_BYTES</TD>
+
+<TD>--</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glGetBooleanv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_LSB_FIRST</TD>
+
+<TD>Value of GL_UNPACK_LSB_FIRST</TD>
+
+<TD>--</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glGetBooleanv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_ROW_LENGTH</TD>
+
+<TD>Value of GL_UNPACK_ROW_LENGT H</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_SKIP_ROWS</TD>
+
+<TD>Value of GL_UNPACK_SKIP_ROWS</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_SKIP_PIXELS</TD>
+
+<TD>Value of GL_UNPACK_SKIP_PIXELS</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_ALIGNMENT</TD>
+
+<TD>Value of GL_UNPACK_ALIGNMENT</TD>
+
+<TD>--</TD>
+
+<TD>4</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PACK_SWAP_BYTES</TD>
+
+<TD>Value of GL_PACK_SWAP_BYTES</TD>
+
+<TD>--</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glGetBooleanv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PACK_LSB_FIRST</TD>
+
+<TD>Value of GL_PACK_LSB_FIRST</TD>
+
+<TD>--</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glGetBooleanv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PACK_ROW_LENGTH</TD>
+
+<TD>Value of GL_PACK_ROW_LENGTH</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PACK_SKIP_ROWS</TD>
+
+<TD>Value of GL_PACK_SKIP_ROWS</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PACK_SKIP_PIXELS</TD>
+
+<TD>Value of GL_PACK_SKIP_PIXELS</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PACK_ALIGNMENT</TD>
+
+<TD>Value of GL_PACK_ALIGNMENT</TD>
+
+<TD>--</TD>
+
+<TD>4</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAP_COLOR</TD>
+
+<TD>True if colors are mapped</TD>
+
+<TD>pixel</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glGetBooleanv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAP_STENCIL</TD>
+
+<TD>True if stencil values are mapped</TD>
+
+<TD>pixel</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glGetBooleanv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INDEX_SHIFT</TD>
+
+<TD>Value of GL_INDEX_SHIFT</TD>
+
+<TD>pixel</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INDEX_OFFSET</TD>
+
+<TD>Value of GL_INDEX_OFFSET</TD>
+
+<TD>pixel</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_<B>x</B>_SCALE</TD>
+
+<TD>Value of GL_<B>x</B>_SCALE; <B>x</B> is GL_RED, GL_GREEN, GL_BLUE,
+GL_ALPHA, or GL_DEPTH</TD>
+
+<TD>pixel</TD>
+
+<TD>1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_<B>x</B>_BIAS</TD>
+
+<TD>Value of GL_<B>x</B>_BIAS; <B>x</B> is one of GL_RED, GL_GREEN, GL_BLUE,
+GL_ALPHA, or GL_DEPTH</TD>
+
+<TD>pixel</TD>
+
+<TD>0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ZOOM_X</TD>
+
+<TD><B>x</B> zoom factor</TD>
+
+<TD>pixel</TD>
+
+<TD>1.0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ZOOM_Y</TD>
+
+<TD><B>y</B> zoom factor</TD>
+
+<TD>pixel</TD>
+
+<TD>1.0</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_x</TD>
+
+<TD>glPixelMap() translation tables; <B>x</B> is a map name from Table
+8-5</TD>
+
+<TD>pixel</TD>
+
+<TD>0's</TD>
+
+<TD>glGetPixelMap()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_<B>x</B>_SIZE</TD>
+
+<TD>Size of table <B>x</B></TD>
+
+<TD>pixel</TD>
+
+<TD>1</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_READ_BUFFER</TD>
+
+<TD>Read source buffer</TD>
+
+<TD>pixel</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Evaluators</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-12 : </B>Evaluator State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ORDER</TD>
+
+<TD>1D map order</TD>
+
+<TD>--</TD>
+
+<TD>1</TD>
+
+<TD>glGetMapiv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ORDER</TD>
+
+<TD>2D map orders</TD>
+
+<TD>--</TD>
+
+<TD>1, 1</TD>
+
+<TD>glGetMapiv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_COEFF</TD>
+
+<TD>1D control points</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetMapfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_COEFF</TD>
+
+<TD>2D control points</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetMapfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DOMAIN</TD>
+
+<TD>1D domain endpoints</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetMapfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DOMAIN</TD>
+
+<TD>2D domain endpoints</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetMapfv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAP1_<B>x</B></TD>
+
+<TD>1D map enables: <B>x</B> is map type</TD>
+
+<TD>eval/enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAP2_<B>x</B></TD>
+
+<TD>2D map enables: <B>x</B> is map type</TD>
+
+<TD>eval/enable</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAP1_GRID_DOMAIN</TD>
+
+<TD>1D grid endpoints</TD>
+
+<TD>eval</TD>
+
+<TD>0, 1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAP2_GRID_DOMAIN</TD>
+
+<TD>2D grid endpoints</TD>
+
+<TD>eval</TD>
+
+<TD>0, 1; 0, 1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAP1_GRID_SEGMENTS</TD>
+
+<TD>1D grid divisions</TD>
+
+<TD>eval</TD>
+
+<TD>1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAP2_GRID_SEGMENTS</TD>
+
+<TD>2D grid divisions</TD>
+
+<TD>eval</TD>
+
+<TD>1,1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_AUTO_NORMAL</TD>
+
+<TD>True if automatic normal generation enabled</TD>
+
+<TD>eval</TD>
+
+<TD>GL_FALSE</TD>
+
+<TD>glIsEnabled()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Hints</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-13 : </B>Hint State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PERSPECTIVE_CORRECTION_ HINT</TD>
+
+<TD>Perspective correction hint</TD>
+
+<TD>hint</TD>
+
+<TD>GL_DONT_CARE</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POINT_SMOOTH_HINT</TD>
+
+<TD>Point smooth hint</TD>
+
+<TD>hint</TD>
+
+<TD>GL_DONT_CARE</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_SMOOTH_HINT</TD>
+
+<TD>Line smooth hint</TD>
+
+<TD>hint</TD>
+
+<TD>GL_DONT_CARE</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POLYGON_SMOOTH_HINT</TD>
+
+<TD>Polygon smooth hint</TD>
+
+<TD>hint</TD>
+
+<TD>GL_DONT_CARE</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FOG_HINT</TD>
+
+<TD>Fog hint</TD>
+
+<TD>hint</TD>
+
+<TD>GL_DONT_CARE</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Implementation-Dependent Values</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-14 : </B>Implementation-Dependent State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Minimum Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_LIGHTS</TD>
+
+<TD>Maximum number of lights</TD>
+
+<TD>--</TD>
+
+<TD>8</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_CLIP_PLANES</TD>
+
+<TD>Maximum number of user clipping planes</TD>
+
+<TD>--</TD>
+
+<TD>6</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_MODELVIEW_STACK_ DEPTH</TD>
+
+<TD>Maximum modelview-matrix stack depth</TD>
+
+<TD>--</TD>
+
+<TD>32</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_PROJECTION_STACK_ DEPTH</TD>
+
+<TD>Maximum projection-matrix stack depth</TD>
+
+<TD>--</TD>
+
+<TD>2</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_TEXTURE_STACK_DE PTH</TD>
+
+<TD>Maximum depth of texture matrix stack</TD>
+
+<TD>--</TD>
+
+<TD>2</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SUBPIXEL_BITS</TD>
+
+<TD>Number of bits of subpixel precision in x and y</TD>
+
+<TD>--</TD>
+
+<TD>4</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_TEXTURE_SIZE</TD>
+
+<TD>Maximum height or width of a texture image (w/o borders)</TD>
+
+<TD>--</TD>
+
+<TD>64</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_PIXEL_MAP_TABLE</TD>
+
+<TD>Maximum size of a glPixelMap() translation table</TD>
+
+<TD>--</TD>
+
+<TD>32</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_NAME_STACK_DEPT H</TD>
+
+<TD>Maximum selection-name stack depth</TD>
+
+<TD>--</TD>
+
+<TD>64</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_LIST_NESTING</TD>
+
+<TD>Maximum display-list call nesting</TD>
+
+<TD>--</TD>
+
+<TD>64</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_EVAL_ORDER</TD>
+
+<TD>Maximum evaluator polynomial order</TD>
+
+<TD>--</TD>
+
+<TD>8</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_VIEWPORT_DIMS</TD>
+
+<TD>Maximum viewport dimensions</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAX_ATTRIB_STACK_DEPT H</TD>
+
+<TD>Maximum depth of the attribute stack</TD>
+
+<TD>--</TD>
+
+<TD>16</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_AUX_BUFFERS</TD>
+
+<TD>Number of auxiliary buffers</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetBooleanv( )</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_RGBA_MODE</TD>
+
+<TD>True if color buffers store RGBA</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetBooleanv( )</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INDEX_MODE</TD>
+
+<TD>True if color buffers store indices</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetBooleanv( )</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DOUBLEBUFFER</TD>
+
+<TD>True if front &amp; back buffers exist</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetBooleanv( )</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STEREO</TD>
+
+<TD>True if left &amp; right buffers exist</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POINT_SIZE_RANGE</TD>
+
+<TD>Range (low to high) of antialiased point sizes</TD>
+
+<TD>--</TD>
+
+<TD>1, 1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POINT_SIZE_GRANULARIT Y</TD>
+
+<TD>Antialiased point-size granularity</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_WIDTH_RANGE</TD>
+
+<TD>Range (low to high) of antialiased line widths</TD>
+
+<TD>--</TD>
+
+<TD>1, 1</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_WIDTH_GRANULARI TY</TD>
+
+<TD>Antialiased line-width granularity</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetFloatv()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Implementation-Dependent Pixel Depths</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-15 : </B>Implementation-Dependent Pixel-Depth
+State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_RED_BITS</TD>
+
+<TD>Number of bits per red component in color buffers</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_GREEN_BITS</TD>
+
+<TD>Number of bits per green component in color buffers</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_BLUE_BITS</TD>
+
+<TD>Number of bits per blue component in color buffers</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ALPHA_BITS</TD>
+
+<TD>Number of bits per alpha component in color buffers</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INDEX_BITS</TD>
+
+<TD>Number of bits per index in color buffers</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DEPTH_BITS</TD>
+
+<TD>Number of depth-buffer bitplanes</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_BITS</TD>
+
+<TD>Number of stencil bitplanes</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ACCUM_RED_BITS</TD>
+
+<TD>Number of bits per red component in the accumulation buffer</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ACCUM_GREEN_BITS</TD>
+
+<TD>Number of bits per green component in the accumulation buffer&nbsp;</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ACCUM_BLUE_BITS</TD>
+
+<TD>Number of bits per blue component in the accumulation buffer</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ACCUM_ALPHA_BITS</TD>
+
+<TD>Number of bits per alpha component in the accumulation buffer</TD>
+
+<TD>--</TD>
+
+<TD>--</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Miscellaneous</H3>
+
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table B-16 : </B>Miscellaneous State Variables</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>State Variable</TH>
+
+<TH>Description</TH>
+
+<TH>Attribute Group</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Get Command</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LIST_BASE</TD>
+
+<TD>Setting of glListBase()</TD>
+
+<TD>list</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LIST_INDEX</TD>
+
+<TD>Number of display list under construction;&nbsp;
+<BR>0 if none</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LIST_MODE</TD>
+
+<TD>Mode of display list under construction; undefined if none</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ATTRIB_STACK_DEPTH</TD>
+
+<TD>Attribute stack pointer</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_NAME_STACK_DEPTH</TD>
+
+<TD>Name stack depth</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_RENDER_MODE</TD>
+
+<TD>glRenderMode() setting</TD>
+
+<TD>--</TD>
+
+<TD>GL_RENDER</TD>
+
+<TD>glGetIntegerv()</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>--</TD>
+
+<TD>Current error code(s)</TD>
+
+<TD>--</TD>
+
+<TD>0</TD>
+
+<TD>glGetError()</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR><A HREF="appendixa.html">[Previous chapter]</A> <A HREF="appendixc.html">[Next
+chapter]
+<HR></A>See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>

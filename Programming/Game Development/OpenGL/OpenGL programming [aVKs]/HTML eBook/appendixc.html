@@ -1,0 +1,599 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Appendix C - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<HR>
+<H1>
+Appendix C<BR>
+The OpenGL Utility Library</H1>
+OpenGL provides a powerful but small set of drawing operations, and all
+higher-level drawing must be done in terms of these. To help simplify some
+of your programming tasks, the OpenGL Utility Library (GLU) includes several
+routines that encapsulate OpenGL commands. Many of these routines are described
+in earlier chapters as their topics arise; these routines are briefly listed
+here for completeness. GLU routines that aren't discussed earlier are described
+in more depth here. Nevertheless, you might want to consult the <I>OpenGL
+Reference Manual</I> for more detailed descriptions of all these routines.
+This appendix groups the GLU routines functionally as follows:
+<UL>"Manipulating Images for Use in Texturing"
+<BR>&nbsp;
+<P>"Transforming Coordinates"
+<BR>&nbsp;
+<P>"Polygon Tessellation"
+<BR>&nbsp;
+<P>"Rendering Spheres, Cylinders, and Disks"
+<BR>&nbsp;
+<P>"NURBS Curves and Surfaces"
+<BR>&nbsp;
+<P>"Describing Errors"</UL>
+
+<HR>
+<H2>
+<A NAME="X"></A>Manipulating Images for Use in Texturing</H2>
+As you set up texture mapping in your application, you'll probably want
+to take advantage of mipmapping, which requires a series of reduced images
+(or texture maps). To support mipmapping, the GLU includes a general routine
+that scales images (<B>gluScaleImage()</B>) and routines that generate
+a complete set of mipmaps given an original image in one or two dimensions
+(<B>gluBuild1DMipmaps()</B> and <B>gluBuild2DMipmaps()</B>). These routines
+are all discussed in some detail in Chapter 9 , so here only their prototypes
+are listed:
+<DL>
+<DT>
+GLint <B>gluScaleImage</B>(GLenum <B>format</B>, GLint <B>widthin</B>,
+GLint <B>heightin</B>, GLenum <B>typein</B>, const void *<B>datain</B>,
+GLint <B>widthout</B>, GLint <B>heightout</B>, GLenum <B>typeout</B>, void
+*<B>dataout</B>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>GLint <B>gluBuild1DMipmaps</B>(GLenum <B>target</B>, GLint <B>components</B>,
+GLint <B>width</B>, GLenum <B>format</B>, GLenum <B>type</B>, void *<B>data</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>GLint <B>gluBuild2DMipmaps</B>(GLenum <B>target</B>, GLint <B>components</B>,
+GLint <B>width</B>, GLint <B>height</B>, GLenum <B>format</B>, GLenum <B>type</B>,
+void *<B>data</B>);
+<DD>
+</DD>
+</DL>
+
+<HR>
+<H2>
+Transforming Coordinates</H2>
+The GLU includes routines that create matrices for standard perspective
+and orthographic viewing (<B>gluPerspective()</B> and <B>gluOrtho2D()</B>).
+In addition, a viewing routine allows you to place your eye at any point
+in space and look at any other point (<B>gluLookAt()</B>). These routines
+are discussed in Chapter 3 . In addition, the GLU includes a routine to
+help you create a picking matrix (<B>gluPickMatrix()</B>); this routine
+is discussed in Chapter 12 . For your convenience, the prototypes for these
+four routines are listed here.
+<DL>
+<DT>
+void <B>gluPerspective</B>(GLdouble <B>fovy</B>, GLdouble <B>aspect</B>,
+GLdouble <B>zNear</B>, GLdouble <B>zFar</B>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluOrtho2D</B>(GLdouble <B>left</B>, GLdouble <B>right</B>,
+GLdouble <B>bottom</B>, GLdouble <B>top</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluLookAt</B>(GLdouble <B>eyex</B>, GLdouble <B>eyey</B>, GLdouble
+<B>eyez</B>, GLdouble <B>centerx</B>, GLdouble <B>centery</B>, GLdouble
+<B>centerz</B>, GLdouble <B>upx</B>, GLdouble <B>upy</B>, GLdouble <B>upz</B>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluPickMatrix</B>(GLdouble <B>x</B>, GLdouble <B>y</B>, GLdouble
+<B>width</B>, GLdouble <B>height</B>, GLint <B>viewport</B>[4]);
+<DD>
+</DD>
+</DL>
+In addition, GLU provides two routines that convert between object coordinates
+and screen coordinates, <B>gluProject()</B> and <B>gluUnProject()</B>.
+GLint <B>gluProject</B>(GLdouble <B>objx</B>, GLdouble <B>objy</B>, GLdouble
+<B>objz</B>, const GLdouble <B>modelMatrix</B>[16],const GLdouble <B>projMatrix</B>[16],
+const GLint <B>viewport</B>[4], GLdouble *<B>winx</B>, GLdouble *<B>winy</B>,
+GLdouble *<B>winz</B>);
+<P>Transforms the specified object coordinates <B>objx</B>, <B>objy</B>,
+and <B>objz</B> into window coordinates using <B>modelMatrix</B>, <B>projMatrix</B>,
+and <B>viewport</B>. The result is stored in <B>winx</B>, <B>winy</B>,
+and <B>winz</B>. A return value of GL_TRUE indicates success, and GL_FALSE
+indicates failure.
+<P>GLint <B>gluUnProject</B>(GLdouble <B>winx</B>, GLdouble <B>winy</B>,
+GLdouble <B>winz</B>, const GLdouble <B>modelMatrix</B>[16], const GLdouble
+<B>projMatrix</B>[16], const GLint <B>viewport</B>[4], GLdouble *<B>objx</B>,
+GLdouble *<B>objy</B>, GLdouble *<B>objz</B>);
+<P>Transforms the specified window coordinates <B>winx</B>, <B>winy</B>,
+and <B>winz</B> into object coordinates using <B>modelMatrix</B>, <B>projMatrix</B>,
+and <B>viewport</B>. The result is stored in <B>objx</B>, <B>objy</B>,
+and <B>objz</B>. A return value of GL_TRUE indicates success, and GL_FALSE
+indicates failure.
+<P>
+<HR>
+<H2>
+Polygon Tessellation</H2>
+As discussed in "Describing Points, Lines, and Polygons," OpenGL can directly
+display only simple convex polygons. A polygon is simple if the edges intersect
+only at vertices, there are no duplicate vertices, and exactly two edges
+meet at any vertex. If your application requires the display of simple
+nonconvex polygons or of simple polygons containing holes, those polygons
+must first be subdivided into convex polygons before they can be displayed.
+Such subdivision is called tessellation. GLU provides a collection of routines
+that perform tessellation. Note that the GLU tessellation routines can't
+handle nonsimple polygons; there's no standard OpenGL method to handle
+such polygons.
+<P>Since tessellation is often required and can be rather tricky, this
+section describes the GLU tessellation routines in detail. These routines
+take as input arbitrary simple polygons that might include holes, and they
+return some combination of triangles, triangle meshes, and triangle fans.
+You can insist on only triangles if you don't want to have to deal with
+meshes or fans. If you care about performance, however, you should probably
+take advantage of any available mesh or fan information.
+<H3>
+The Callback Mechanism</H3>
+To tessellate a polygon using the GLU, first you need to create a tessellation
+object, and then provide a series of callback routines to be called at
+appropriate times during the tessellation. After you specify the callbacks,
+you describe the polygon and any holes using GLU routines, which are similar
+to the OpenGL polygon routines. When the polygon description is complete,
+the tessellation facility invokes your callback routines as necessary.
+<P>The callback routines typically save the data for the triangles, triangle
+meshes, and triangle fans in user-defined data structures, or in OpenGL
+display lists (see Chapter 4 ). To render the polygons, other code traverses
+the data structures or calls the display lists. Although the callback routines
+could call OpenGL commands to display them directly, this is usually not
+done, as tessellation can be computationally expensive. It's a good idea
+to save the data if there is any chance that you want to display it again.
+The GLU tessellation routines are guaranteed never to return any new vertices,
+so interpolation of vertices, texture coordinates, or colors is never required.
+<H3>
+The Tessellation Object</H3>
+As a complex polygon is being described and tessellated, it has associated
+data, such as the vertices, edges, and callback functions. All this data
+is tied to a single tessellation object. To do tessellation, your program
+first has to create a tessellation object using the routine <B>gluNewTess()</B>.GLUtriangulatorObj*<B>
+gluNewTess</B>(void);
+<P>Creates a new tessellation object and returns a pointer to it. A null
+pointer is returned if the creation fails.
+<P>If you no longer need a tessellation object, you can delete it and free
+all associated memory with <B>gluDeleteTess()</B>.void <B>gluDeleteTess</B>(GLUtriangulatorObj
+*<B>tessobj</B>);
+<P>Deletes the specified tessellation object, <B>tessobj</B>, and frees
+all associated memory.
+<P>A single tessellation object can be reused for all your tessellations.
+This object is required only because library routines might need to do
+their own tessellations, and they should be able to do so without interfering
+with any tessellation that your program is doing. It might also be useful
+to have multiple tessellation objects if you want to use different sets
+of callbacks for different tessellations. A typical program, however, allocates
+a single tessellation object and uses it for all its tessellations. There's
+no real need to free it because it uses a small amount of memory. On the
+other hand, if you're writing a library routine that uses the GLU tessellation,
+you'll want to be careful to free any tessellation objects you create.
+<H3>
+Specifying Callbacks</H3>
+You can specify up to five callback functions for a tessellation. Any functions
+that are omitted are simply not called during the tessellation, and any
+information they might have returned to your program is lost. All are specified
+by the single routine <B>gluTessCallback()</B>.void <B>gluTessCallback</B>(GLUtriangulatorObj
+*<B>tessobj</B>, GLenum <B>type</B>, void (*<B>fn</B>)());
+<P>Associates the callback function <I>fn</I> with the tessellation object
+<I>tessobj</I>. The type of the callback is determined by the parameter
+<I>type</I>, which can be GLU_BEGIN, GLU_EDGE_FLAG, GLU_VERTEX, GLU_END,
+or GLU_ERROR. The five possible callback functions have the following prototypes:
+<DL>
+<DT>
+GLU_BEGIN</DT>
+
+<DD>
+</DD>
+
+<BR>void <B>begin</B>(GLenum <I>type</I>);
+<DT>
+</DT>
+
+<BR>GLU_EDGE_FLAG
+<DD>
+</DD>
+
+<BR>void <B>edgeFlag</B>(GLboolean <I>flag</I>);
+<DT>
+</DT>
+
+<BR>GLU_VERTEX
+<DD>
+</DD>
+
+<BR>void <B>vertex</B>(void *<I>data</I>);
+<DT>
+</DT>
+
+<BR>GLU_END
+<DD>
+</DD>
+
+<BR>void <B>end</B>(void);
+<DT>
+</DT>
+
+<BR>GLU_ERROR
+<DD>
+</DD>
+
+<BR>void <B>error</B>(GLenum <I>errno</I>);</DL>
+To change a callback routine, simply call <B>gluTessCallback()</B> with
+the new routine. To eliminate a callback routine without replacing it with
+a new one, pass <B>gluTessCallback()</B> a null pointer for the appropriate
+function.
+<P>As tessellation proceeds, these routines are called in a manner similar
+to the way you would use the OpenGL commands <B>glBegin()</B>, <B>glEdgeFlag*()</B>,
+<B>glVertex*()</B>, and <B>glEnd()</B>. (See "Marking Polygon Boundary
+Edges" in Chapter 2 for more information about <B>glEdgeFlag*()</B>.) The
+error callback is invoked during the tessellation only if something goes
+wrong.
+<P>The GLU_BEGIN callback is invoked with one of three possible parameters:
+GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, or GL_TRIANGLES. After this routine
+is called, and before the callback associated with GLU_END is called, some
+combination of the GLU_EDGE_FLAG and GLU_VERTEX callbacks is invoked. The
+associated vertices and edge flags are interpreted exactly as they are
+in OpenGL between <B>glBegin</B>(GL_TRIANGLE_FAN), <B>glBegin</B>(GL_TRIANGLE_STRIP),
+or <B>glBegin</B>(GL_TRIANGLES) and the matching <B>glEnd()</B>. Since
+edge flags make no sense in a triangle fan or triangle strip, if there
+is a callback associated with GLU_EDGE_FLAG, the GLU_BEGIN callback is
+called only with GL_TRIANGLES. The GLU_EDGE_FLAG callback works exactly
+analogously to the OpenGL <B>glEdgeFlag*()</B> call.
+<P>The error callback is passed a GLU error number. A character string
+describing the error can be obtained using the routine <B>gluErrorString()</B>.
+See "Describing Errors" for more information about this routine.
+<H3>
+Describing the Polygon to Be Tessellated</H3>
+The polygon to be tessellated, possibly containing holes, is specified
+using the following four routines: <B>gluBeginPolygon()</B>, <B>gluTessVertex()</B>,
+<B>gluNextContour()</B>, and <B>gluEndPolygon()</B>. For polygons without
+holes, the specification is exactly as in OpenGL: start with <B>gluBeginPolygon()</B>,
+call <B>gluTessVertex()</B> for each vertex in the boundary, and end the
+polygon with a call to <B>gluEndPolygon()</B>. If a polygon consists of
+multiple contours, including holes and holes within holes, the contours
+are specified one after the other, each preceded by <B>gluNextContour()</B>.
+When <B>gluEndPolygon()</B> is called, it signals the end of the final
+contour and starts the tessellation. You can omit the call to <B>gluNextContour()</B>
+before the first contour. The detailed descriptions of these functions
+follow.void <B>gluBeginPolygon</B>(GLUtriangulatorObj *<B>tessobj</B>);
+<P>Begins the specification of a polygon to be tessellated and associates
+a tessellation object, <B>tessobj</B>, with it. The callback functions
+to be used are those that were bound to the tessellation object using the
+routine <B>gluTessCallback()</B>.
+<P>void <B>gluTessVertex</B>(GLUtriangulatorObj *<B>tessobj</B>,GLdouble
+<B>v</B>[3], void *<B>data</B>);
+<P>Specifies a vertex in the polygon to be tessellated. Call this routine
+for each vertex in the polygon to be tessellated. <I>tessobj</I> is the
+tessellation object to use, <I>v</I> contains the three-dimensional vertex
+coordinates, and <I>data</I> is an arbitrary pointer that's sent to the
+callback associated with GLU_VERTEX. Typically, it contains vertex data,
+texture coordinates, color information, or whatever else the application
+may find useful.
+<P>void <B>gluNextContour</B>(GLUtriangulatorObj *<B>tessobj</B>, GLenum
+<B>type</B>);
+<P>Marks the beginning of the next contour when multiple contours make
+up the boundary of the polygon to be tessellated. <I>type</I> can be GLU_EXTERIOR,
+GLU_INTERIOR, GLU_CCW, GLU_CW, or GLU_UNKNOWN. These serve only as hints
+to the tessellation. If you get them right, the tessellation might go faster.
+If you get them wrong, they're ignored, and the tesselation still works.
+For a polygon with holes, one contour is the exterior contour and the others
+interior. <B>gluNextContour()</B> can be called immediately after <B>gluBeginPolygon()</B>,
+but if it isn't, the first contour is assumed to be of type GLU_EXTERIOR.
+GLU_CW and GLU_CCW indicate clockwise- and counterclockwise- oriented polygons.
+Choosing which are clockwise and which are counterclockwise is arbitrary
+in three dimensions, but in any plane, there are two different orientations,
+and the GLU_CW and GLU_CCW types should be used consistently. Use GLU_UNKNOWN
+if you don't have a clue.
+<P>void <B>gluEndPolygon</B>(GLUtriangulatorObj *<B>tessobj</B>);
+<P>Indicates the end of the polygon specification and that the tessellation
+can begin using the tessellation object <B>tessobj</B>.
+<P>
+<HR>
+<H2>
+Rendering Spheres, Cylinders, and Disks</H2>
+The GLU includes a set of routines to draw various simple surfaces (spheres,
+cylinders, disks, and parts of disks) in a variety of styles and orientations.
+These routines are described in detail in the <I>OpenGL Reference Manual</I>;
+their use is discussed briefly in the following paragraphs, and their prototypes
+are also listed.
+<P>To create a quadric object, use <B>gluNewQuadric()</B>. (To destroy
+this object when you're finished with it, use <B>gluDeleteQuadric()</B>.)
+Then specify the desired rendering style, as follows, with the appropriate
+routine (unless you're satisfied with the default values):
+<UL>Whether surface normals should be generated, and if so, whether there
+should be one normal per vertex or one normal per face: <B>gluQuadricNormals()</B>
+<BR>&nbsp;
+<P>Whether texture coodinates should be generated: <B>gluQuadricTexture()</B>
+<BR>&nbsp;
+<P>Which side of the quadric should be considered the outside and which
+the inside: <B>gluQuadricOrientation()</B>
+<BR>&nbsp;
+<P>Whether the quadric should be drawn as a set of polygons, lines, or
+points: <B>gluQuadricDrawStyle()</B></UL>
+After you've specified the rendering style, simply invoke the rendering
+routine for the desired type of quadric object<B>: gluSphere()</B>, <B>gluCylinder()</B>,
+<B>gluDisk()</B>, or <B>gluPartialDisk()</B>. If an error occurs during
+rendering, the error-handling routine you've specified with <B>gluQuadricCallBack()</B>
+is invoked.
+<P>It's better to use the <B>*Radius</B>, <B>height</B>, and similar arguments
+to scale the quadrics rather than the <B>glScale*()</B> command, so that
+unit-length normals that are generated don't have to be renormalized. Set
+the <B>loops</B> and <B>stacks</B> arguments to values other than 1 to
+force lighting calculations at a finer granularity, especially if the material
+specularity is high.
+<P>The prototypes are listed in three categories.
+<P>Manage quadric objects:
+<DL>
+<DT>
+GLUquadricObj* <B>gluNewQuadric</B> (void);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluDeleteQuadric</B> (GLUquadricObj *<I>state</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluQuadricCallback</B> (GLUquadricObj *<I>qobj</I>, GLenum
+<I>which</I>, void (*<I>fn</I>)());
+<DD>
+</DD>
+</DL>
+Control the rendering:
+<DL>
+<DT>
+void <B>gluQuadricNormals</B> (GLUquadricObj *<I>quadObject</I>, GLenum
+<I>normals</I>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluQuadricTexture</B> (GLUquadricObj *<I>quadObject</I>, GLboolean
+<I>textureCoords</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluQuadricOrientation</B> (GLUquadricObj *<I>quadObject</I>,
+GLenum <I>orientation</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluQuadricDrawStyle</B> (GLUquadricObj *<I>quadObject</I>,
+GLenum <I>drawStyle</I>);
+<DD>
+</DD>
+</DL>
+Specify a quadric primitive:
+<DL>
+<DT>
+void <B>gluCylinder</B> (GLUquadricObj *<I>qobj</I>, GLdouble <I>baseRadius</I>,
+GLdouble <I>topRadius</I>, GLdouble <I>height</I>, GLint <I>slices</I>,
+GLint <I>stacks</I>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluDisk</B> (GLUquadricObj *<I>qobj</I>, GLdouble <I>innerRadius</I>,
+GLdouble <I>outerRadius</I>, GLint <I>slices</I>, GLint <I>loops</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluPartialDisk</B> (GLUquadricObj *<I>qobj</I>, GLdouble <I>innerRadius</I>,
+GLdouble <I>outerRadius</I>, GLint <I>slices</I>, GLint <I>loops</I>, GLdouble
+<I>startAngle</I>, GLdouble <I>sweepAngle</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluSphere</B> (GLUquadricObj *<I>qobj</I>, GLdouble <I>radius</I>,
+GLint <I>slices</I>,GLint <I>stacks</I>);
+<DD>
+</DD>
+</DL>
+
+<HR>
+<H2>
+NURBS Curves and Surfaces</H2>
+NURBS routines provide general and powerful descriptions of curves and
+surfaces in two and three dimensions. They're used to represent geometry
+in many computer-aided mechanical design systems. The GLU NURBS routines
+can render such curves and surfaces in a variety of styles, and they can
+automatically handle adaptive subdivision that tessellates the domain into
+smaller triangles in regions of high curvature and near silhouette edges.
+All the GLU NURBS routines are described in Chapter 9 ; their prototypes
+are listed here.
+<P>Manage a NURBS object:
+<DL>
+<DT>
+GLUnurbsObj* <B>gluNewNurbsRenderer</B> (void);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluDeleteNurbsRenderer</B> (GLUnurbsObj *<I>nobj</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluNurbsCallback</B> (GLUnurbsObj *<I>nobj</I>, GLenum <I>which</I>,
+void (*<I>fn</I>)());
+<DD>
+</DD>
+</DL>
+Create a NURBS curve:
+<DL>
+<DT>
+void <B>gluBeginCurve</B> (GLUnurbsObj *<I>nobj</I>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluEndCurve</B> (GLUnurbsObj *<I>nobj</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluNurbsCurve</B> (GLUnurbsObj *<I>nobj</I>, GLint <I>nknots</I>,
+GLfloat *<I>knot</I>, GLint <I>stride</I>, GLfloat *<I>ctlarray</I>, GLint
+<I>order</I>, GLenum <I>type</I>);
+<DD>
+</DD>
+</DL>
+Create a NURBS surface:
+<DL>
+<DT>
+void <B>gluBeginSurface</B> (GLUnurbsObj *<I>nobj</I>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluEndSurface</B> (GLUnurbsObj *<I>nobj</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluNurbsSurface</B> (GLUnurbsObj *<I>nobj</I>, GLint <I>uknot_count</I>,
+GLfloat *<I>uknot</I>, GLint <I>vknot_count</I>, GLfloat *<I>vknot</I>,
+GLint <I>u_stride</I>, GLint <I>v_stride</I>, GLfloat *<I>ctlarray</I>,
+GLint <I>uorder</I>, GLint <I>vorder</I>, GLenum <I>type</I>);
+<DD>
+</DD>
+</DL>
+Define a trimming region:
+<DL>
+<DT>
+void <B>gluBeginTrim</B> (GLUnurbsObj *<I>nobj</I>);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluEndTrim</B> (GLUnurbsObj *<I>nobj</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluPwlCurve</B> (GLUnurbsObj *<I>nobj</I>, GLint <I>count</I>,
+GLfloat *<I>array</I>, GLint <I>stride</I>, GLenum <I>type</I>);
+<DD>
+</DD>
+</DL>
+Control NURBS rendering:
+<DL>
+<DT>
+void <B>gluLoadSamplingMatrices</B> (GLUnurbsObj *<I>nobj</I>, const GLfloat
+<I>modelMatrix</I>[16], const GLfloat <I>projMatrix</I>[16], const GLint
+<I>viewport</I>[4]);</DT>
+
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluNurbsProperty</B> (GLUnurbsObj *<I>nobj</I>, GLenum <I>property</I>,
+GLfloat <I>value</I>);
+<DD>
+</DD>
+
+<DT>
+</DT>
+
+<BR>void <B>gluGetNurbsProperty</B> (GLUnurbsObj *<I>nobj</I>, GLenum <I>property</I>,
+GLfloat *<I>value</I>);
+<DD>
+</DD>
+</DL>
+
+<HR>
+<H2>
+Describing Errors</H2>
+The GLU provides a routine for obtaining a descriptive string for an error
+code. For information about OpenGL's error handling facility, see "Error
+Handling." const GLubyte*<B> gluErrorString</B>(GLenum <B>errorCode</B>);
+<P>Returns a pointer to a descriptive string that corresponds to the OpenGL,
+GLU, or GLX error number passed in <B>errorCode</B>. The defined error
+codes are described in the <I>OpenGL Reference Manual</I> along with the
+command or routine that can generate them.
+<P>
+<HR><A HREF="appendixb.html">[Previous chapter]</A> <A HREF="appendixd.html">[Next
+chapter]
+<HR></A>See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>

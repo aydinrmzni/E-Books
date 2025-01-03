@@ -1,0 +1,1361 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Chapter 8 - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<PRE>
+</PRE>
+
+<HR>
+<H1>
+Chapter 8<BR>
+Drawing Pixels, Bitmaps, Fonts, and Images</H1>
+<B>Chapter Objectives</B>
+<P>After reading this chapter, you'll be able to do the following:
+<UL>Position and draw bitmapped data
+<BR>&nbsp;
+<P>Read pixel data (bitmaps and images) from the framebuffer into processor
+memory and from memory into the framebuffer
+<BR>&nbsp;
+<P>Copy pixel data from one buffer to another, or to another location in
+the same buffer
+<BR>&nbsp;
+<P>Magnify or reduce an image as it's written to the framebuffer
+<BR>&nbsp;
+<P>Control pixel-data formatting and perform other transformations as the
+data is moved to and from the framebuffer</UL>
+So far, most of the discussion in this guide has concerned the rendering
+of geometric data - points, lines, and polygons. Two other important classes
+of data that can be rendered by OpenGL are the following:
+<UL>Bitmaps, typically used for characters in fonts
+<BR>&nbsp;
+<P>Image data, which might have been scanned in or calculated</UL>
+Both bitmaps and image data take the form of rectangular arrays of pixels.
+One difference between them is that a bitmap consists of a single bit of
+information about each pixel, and image data typically includes several
+pieces of data per pixel (the complete red, green, blue, and alpha color
+components, for example). Also, bitmaps are like masks in that they're
+used to overlay another image, but image data simply overwrites or is blended
+with whatever data might have existed previously.
+<P>This chapter describes how to read pixel data (bitmaps and images) from
+the framebuffer into processor memory (and vice versa), and how to copy
+pixel data from one buffer to another, or within a single buffer to another
+position. This chapter contains the following major sections:
+<UL>"Bitmaps and Fonts" describes the commands for positioning and drawing
+bitmapped data. Such data may describe a font.
+<BR>&nbsp;
+<P>"Images" presents the basic information about reading and copying pixel
+data. It also explains how to magnify or reduce an image as it's written
+to the framebuffer.
+<BR>&nbsp;
+<P>"Storing, Transforming, and Mapping Pixels" covers all the details of
+how pixel data is stored in memory and how to transform it as it's moved
+into or out of memory.</UL>
+In most cases, the necessary pixel operations are simple, so the first
+two sections might be all you need to read for your application. However,
+pixel manipulation can be complex - there are many ways to store pixel
+data in memory, and you can apply any of several transformations to pixels
+as they're moved to and from the framebuffer. These details are the subject
+of the third section of this chapter; most likely, you'll want to read
+this section only when you actually need to make use of the information.
+<P>
+
+<HR>
+<H2>
+Bitmaps and Fonts</H2>
+A bitmap is a rectangular array of 0s and 1s that serves as a drawing mask
+for a corresponding rectangular portion of the window. Suppose you're drawing
+a bitmap and that the current color is red. Everywhere there's a 1 in the
+bitmap, the corresponding pixel is replaced by a red pixel (or combined
+with the red pixel, depending on which per-fragment operations are in effect;
+see "Testing and Operating on Fragments" ). If there's a 0 in the bitmap,
+the contents of the pixel are unaffected. The most common use for bitmaps
+is for drawing characters on the screen.
+<P>OpenGL provides only the lowest level of support for drawing strings
+of characters and manipulating fonts. The commands <B>glRasterPos*()</B>
+and <B>glBitmap()</B> position and draw a single bitmap on the screen.
+In addition, through the display-list mechanism, you can use a sequence
+of character codes to index into a corresponding series of bitmaps representing
+those characters. See Chapter 4 for more information about display lists.
+You'll have to write your own routines to provide any other support you
+need for manipulating bitmaps, fonts, and strings of characters.
+<P>As an example, consider Example 8-1 , which draws the character F three
+times on the screen. Figure 8-1 shows the F as a bitmap and its corresponding
+bitmap data.
+<P><IMG SRC="figures/Fdata.gif" ALT="[IMAGE]" NOSAVE >
+<P><B>Figure 8-1 : </B>A Bitmapped F and Its Data
+<BR>&nbsp;
+<BR>&nbsp;
+<P><B>Example 8-1 : </B>Drawing a Bitmapped Character: drawf.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include "aux.h"
+
+GLubyte rasters[24] = {
+&nbsp;&nbsp;&nbsp; 0xc0, 0x00, 0xc0, 0x00, 0xc0, 0x00, 0xc0, 0x00,&nbsp;
+&nbsp;&nbsp;&nbsp; 0xc0, 0x00, 0xff, 0x00, 0xff, 0x00, 0xc0, 0x00,&nbsp;
+&nbsp;&nbsp;&nbsp; 0xc0, 0x00, 0xc0, 0x00, 0xff, 0xc0, 0xff, 0xc0};
+
+void myinit(void)
+{
+&nbsp;&nbsp;&nbsp; glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+&nbsp;&nbsp;&nbsp; glClearColor(0.0, 0.0, 0.0, 0.0);
+}
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; glColor3f(1.0, 1.0, 1.0);
+&nbsp;&nbsp;&nbsp; glRasterPos2i (20.5, 20.5);
+&nbsp;&nbsp;&nbsp; glBitmap(10, 12, 0.0, 0.0, 12.0, 0.0, rasters);
+&nbsp;&nbsp;&nbsp; glBitmap(10, 12, 0.0, 0.0, 12.0, 0.0, rasters);
+&nbsp;&nbsp;&nbsp; glBitmap(10, 12, 0.0, 0.0, 12.0, 0.0, rasters);
+&nbsp;&nbsp;&nbsp; glFlush();
+}
+
+void myReshape(GLsizei w, GLsizei h)
+{
+&nbsp;&nbsp;&nbsp; glViewport(0, 0, w, h);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glLoadIdentity();
+&nbsp;&nbsp;&nbsp; glOrtho(0, w, 0, h, -1.0, 1.0);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_MODELVIEW);
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode(AUX_SINGLE | AUX_RGBA);
+&nbsp;&nbsp;&nbsp; auxInitPosition(0, 0, 500, 500);
+&nbsp;&nbsp;&nbsp; auxInitWindow(argv[0]);
+&nbsp;&nbsp;&nbsp; myinit();
+&nbsp;&nbsp;&nbsp; auxReshapeFunc(myReshape);
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+In Figure 8-1 , note that the visible part of the F character is at most
+10 bits wide. Bitmap data is always stored in chunks that are multiples
+of 8 bits, but the width of the actual bitmap doesn't have to be a multiple
+of 8. The bits making up a bitmap are drawn starting from the lower left
+corner: First, the bottom row is drawn, then the next row above it, and
+so on. As you can tell from the code, the bitmap is stored in memory in
+this order - the array of rasters begins with 0xc0, 0x00, 0xc0, 0x00 for
+the bottom two rows of the F and continues to 0xff, 0xc0, 0xff, 0xc0 for
+the top two rows.
+<P>The commands of interest in this example are <B>glRasterPos2i()</B>
+and <B>glBitmap()</B>; they're discussed in detail in the next section.
+For now, ignore the call to <B>glPixelStorei()</B>; it describes how the
+bitmap data is stored in computer memory. This topic is discussed in "Controlling
+Pixel-Storage Modes."
+<H3>
+The Current Raster Position</H3>
+The current raster position is the origin where the next bitmap (or image)
+is to be drawn. In the F example, the raster position was set using <B>glRasterPos*()</B>
+to (20, 20), which is where the lower left corner of the F was drawn:
+<PRE>glRasterPos2i(20, 20);</PRE>
+void <B>glRasterPos</B>{234}{sifd}{v}(<B>TYPE x, TYPE y, TYPE z, TYPE w</B>);
+<P>Sets the current raster position. The <B>x, y, z</B>, and <B>w</B> arguments
+specify the coordinates of the raster position. If <B>glRasterPos2*()</B>
+is used, <B>z</B> is implicitly set to zero and <B>w</B> is implicitly
+set to one; similarly, with <B>glRasterPos3*()</B>, <B>w</B> is set to
+one.
+<P>The coordinates of the raster position are transformed to screen coordinates
+in exactly the same way as coordinates supplied with a <B>glVertex*()</B>
+command (that is, with the modelview and perspective matrices). After transformation,
+they either define a valid spot in the window on the screen, or they're
+clipped out because the transformed coordinates lie outside the viewport.
+If the transformed point is clipped out, the current raster position is
+invalid.
+<P>To obtain the current raster position, you can use the query command
+<B>glGetFloatv()</B> with GL_CURRENT_RASTER_POSITION as the first argument.
+The second argument should be a pointer to an allocated array that can
+hold the (<B>x, y, z, w</B>) values as floating-point numbers. Call<B>
+glGetBooleanv()</B> with GL_CURRENT_RASTER_POSITION_VALID as the first
+argument to determine whether the current raster position is valid.
+<H3>
+Drawing the Bitmap</H3>
+Once you've set the desired raster position, you probably want to use the
+<B>glBitmap()</B> command to draw the data. void <B>glBitmap</B>(GLsizei
+<B>width</B>, GLsizei <B>height</B>, GLfloat <B>x</B>bo, GLfloat <B>y</B>bo,
+GLfloat <B>x</B>bi, GLfloat <B>y</B>bi, const GLubyte <B>*bitmap</B>);
+<P>Draws the bitmap specified by <B>bitmap</B>, which is a pointer to the
+bitmap image. The origin of the bitmap is placed at the most recently defined
+current raster position. If the current raster position is invalid, nothing
+is drawn, and the raster position remains invalid. The <B>width</B> and
+<B>height</B> arguments indicate the width and height, in pixels, of the
+bitmap. The width need not be a multiple of 8, although the data is stored
+in unsigned characters of 8 bits each. (In the F example, it wouldn't matter
+if there were garbage bits in the data beyond the tenth bit; since <B>glBitmap()</B>
+was called with a width of 10, only 10 bits of the row are rendered.) Use
+<B>x</B>bo and <B>y</B>bo to define the origin of the bitmap (positive
+values move the origin up and to the right; negative values move it down
+and to the left); <B>x</B>bi and <B>y</B>bi indicate the <B>x</B> and <B>y</B>
+increments that are added to the raster position after the bitmap is rasterized
+(see Figure 8-2 ).
+<P><IMG SRC="figures/Fparams.gif" ALT="[IMAGE]" NOSAVE >
+<P><B>Figure 8-2 : </B>A Bitmap and Its Associated Parameters
+<BR>&nbsp;
+<BR>&nbsp;
+<P>Allowing the origin of the bitmap to be placed arbitrarily makes it
+easy for characters to extend below the origin (typically used for characters
+with descenders, such as g, j, and y), or to extend beyond the left of
+the origin (used for various swash characters, which have extended flourishes,
+or for characters in fonts that lean to the left).
+<P>After the bitmap is drawn, the current raster position is advanced by
+<B>x</B>bi and <B>y</B>bi in the<I> x</I>- and <I>y</I>-directions, respectively.
+For standard Latin fonts, <B>y</B>bi is typically 0.0 and <B>x</B>bi is
+positive (since successive characters are drawn from left to right). For
+Hebrew, where characters go from right to left, the <B>x</B>bi values would
+typically be negative. Fonts that draw successive characters vertically
+in columns would use zero for <B>x</B>bi and nonzero values for <B>y</B>bi.
+In Figure 8-2 , each time the F is drawn, the current raster position advances
+by 12 pixels, allowing a 2-pixel space between successive characters.
+<P>Since <B>x</B>bo, <B>y</B>bo, <B>x</B>bi, and <B>y</B>bi are floating-point
+values, characters need not be an integral number of pixels wide. Actual
+characters are drawn on exact pixel boundaries, but the current raster
+position is kept in floating point so that each character is drawn as close
+as possible to where it belongs. For example, if the code in the F example
+was modified so that <B>x</B>bi is 11.5 instead of 12, and if more characters
+were drawn, the space between letters would alternate between one and two
+pixels, giving the best approximation to the requested 1.5-pixel space.
+Note that bitmaps can't be used for rotatable fonts because the bitmap
+is always drawn aligned to the <I>x</I> and <I>y</I> framebuffer axes.
+<H3>
+Fonts and Display Lists</H3>
+Display lists are discussed in general terms in Chapter 4 . However, a
+few of the display-list management commands have special relevance for
+drawing strings of characters. As you read this section, keep in mind that
+the ideas presented here apply equally well to characters that are drawn
+using bitmap data as well as those drawn using geometric primitives (points,
+lines, and polygons). "Executing Multiple Display Lists" presents an example
+of a geometric font.
+<P>A font typically consists of a set of characters, where each character
+has an identifying number (usually the ASCII code), and a drawing method.
+For a standard ASCII character set, the capital letter A is number 65,
+B is 66, and so on. The string "DAB" would be represented by the three
+indices 68, 65, 66. In the simplest approach, display-list number 65 would
+draw an A, number 66 would draw a B, and so on. Then, to draw the string
+68, 65, 66, just execute the corresponding display lists.
+<P>You can use the command <B>glCallLists()</B> in just this way.
+<PRE>void glCallLists(GLsizei n, GLenum type, const GLvoid *lists);</PRE>
+The first argument, <B>n</B>, indicates the number of characters to be
+drawn, <B>type</B> is usually GL_BYTE, and <B>lists</B> is an array of
+character codes.
+<P>Since many applications need to draw character strings in multiple fonts
+and sizes, this simplest approach isn't convenient. Instead, you'd like
+to use 65 as A no matter what font is currently active. You could force
+font 1 to encode A, B, and C as 1065, 1066, 1067, and font 2 as 2065, 2066,
+2067, but then any numbers larger than 256 would no longer fit in an 8-bit
+byte. A better solution is to add an offset to every entry in the string
+and to choose the display list. In this case, font 1 has A, B, and C represented
+by 1065, 1066, and 1067, and in font 2, they might be 2065, 2066, and 2067.
+Then to draw characters in font 1, set the offset to 1000 and draw display
+lists 65, 66, and 67. To draw that same string in font 2, set the offset
+to 2000 and draw the same lists.
+<P>With this approach, use the command <B>glListBase()</B> to set the offset.
+For the preceding examples, it should be called with 1000 or 2000 as the
+(only) argument. Now what you need is a contiguous list of unused display-list
+numbers, which you can obtain from <B>glGenLists()</B>.
+<PRE>GLuint glGenLists(GLsizei range);</PRE>
+This function returns a block of <B>range</B> display-list identifiers.
+The returned lists are all marked as "used" even though they're empty,
+so that subsequent calls to <B>glGenLists()</B> never return the same lists
+(unless you've explicitly deleted them previously). Thus, if you use 4
+as the argument and if <B>glGenLists()</B> returns 81, you can use display-list
+identifiers 81, 82, 83, and 84 for your characters. If <B>glGenLists()</B>
+can't find a block of unused identifiers of the requested length, it returns
+0. (Note that the command <B>glDeleteLists()</B> makes it easy to delete
+all the lists associated with a font in a single operation.)
+<P>Most American and European fonts have a small number of characters (fewer
+than 256), so it's easy to represent each character with a different code
+that can be stored in a single byte. Asian fonts, among others, may require
+much larger character sets, so a byte-per-character encoding is impossible.
+OpenGL allows strings to be composed of one-, two-, three-, or four-byte
+characters through the <B>type</B> parameter in <B>glCallLists()</B>. This
+parameter can have any of the following values:
+<P>GL_BYTE GL_UNSIGNED_BYTE
+<P>GL_SHORT GL_UNSIGNED_SHORT
+<P>GL_INT GL_UNSIGNED_INT
+<P>GL_FLOAT GL_2_BYTES
+<P>GL_3_BYTES GL_4_BYTES
+<P>See "Executing Multiple Display Lists" for more information about these
+values.
+<H3>
+Defining and Using a Complete Font</H3>
+The sample program in this section defines a complete raster font using
+the <B>glBitmap()</B> command and the display-list mechanism described
+in the previous section. A complete ASCII font is defined where each character
+is the same width (although this is by no means necessary). The code is
+similar to the F example, except that ninety-five different bitmaps are
+used (one for each of the printable ASCII characters, including the space
+character), and each is a single command within a display list. Each display-list
+identifier is equal to the ASCII code for that character, and all have
+the same offset added to them. Example 8-2 produces the output shown in
+Figure 8-3 .
+<P><IMG SRC="figures/font.gif" ALT="[IMAGE]" NOSAVE >
+<P><B>Figure 8-3 : </B>A Complete Font Definition
+<BR>&nbsp;
+<BR>&nbsp;
+<P><B>Example 8-2 : </B>Defining a Complete Font: font.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include "aux.h"
+
+GLubyte rasters[][13] = {
+{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18},&nbsp;
+{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x36, 0x36, 0x36, 0x36},&nbsp;
+{0x00, 0x00, 0x00, 0x66, 0x66, 0xff, 0x66, 0x66, 0xff, 0x66, 0x66, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x18, 0x7e, 0xff, 0x1b, 0x1f, 0x7e, 0xf8, 0xd8, 0xff, 0x7e, 0x18},&nbsp;
+{0x00, 0x00, 0x0e, 0x1b, 0xdb, 0x6e, 0x30, 0x18, 0x0c, 0x76, 0xdb, 0xd8, 0x70},&nbsp;
+{0x00, 0x00, 0x7f, 0xc6, 0xcf, 0xd8, 0x70, 0x70, 0xd8, 0xcc, 0xcc, 0x6c, 0x38},&nbsp;
+{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x1c, 0x0c, 0x0e},&nbsp;
+{0x00, 0x00, 0x0c, 0x18, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x18, 0x0c},&nbsp;
+{0x00, 0x00, 0x30, 0x18, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x18, 0x30},&nbsp;
+{0x00, 0x00, 0x00, 0x00, 0x99, 0x5a, 0x3c, 0xff, 0x3c, 0x5a, 0x99, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x00, 0x18, 0x18, 0x18, 0xff, 0xff, 0x18, 0x18, 0x18, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x30, 0x18, 0x1c, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x00, 0x38, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x60, 0x60, 0x30, 0x30, 0x18, 0x18, 0x0c, 0x0c, 0x06, 0x06, 0x03, 0x03},&nbsp;
+{0x00, 0x00, 0x3c, 0x66, 0xc3, 0xe3, 0xf3, 0xdb, 0xcf, 0xc7, 0xc3, 0x66, 0x3c},&nbsp;
+{0x00, 0x00, 0x7e, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x78, 0x38, 0x18},&nbsp;
+{0x00, 0x00, 0xff, 0xc0, 0xc0, 0x60, 0x30, 0x18, 0x0c, 0x06, 0x03, 0xe7, 0x7e},&nbsp;
+{0x00, 0x00, 0x7e, 0xe7, 0x03, 0x03, 0x07, 0x7e, 0x07, 0x03, 0x03, 0xe7, 0x7e},&nbsp;
+{0x00, 0x00, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0xff, 0xcc, 0x6c, 0x3c, 0x1c, 0x0c},&nbsp;
+{0x00, 0x00, 0x7e, 0xe7, 0x03, 0x03, 0x07, 0xfe, 0xc0, 0xc0, 0xc0, 0xc0, 0xff},&nbsp;
+{0x00, 0x00, 0x7e, 0xe7, 0xc3, 0xc3, 0xc7, 0xfe, 0xc0, 0xc0, 0xc0, 0xe7, 0x7e},&nbsp;
+{0x00, 0x00, 0x30, 0x30, 0x30, 0x30, 0x18, 0x0c, 0x06, 0x03, 0x03, 0x03, 0xff},&nbsp;
+{0x00, 0x00, 0x7e, 0xe7, 0xc3, 0xc3, 0xe7, 0x7e, 0xe7, 0xc3, 0xc3, 0xe7, 0x7e},&nbsp;
+{0x00, 0x00, 0x7e, 0xe7, 0x03, 0x03, 0x03, 0x7f, 0xe7, 0xc3, 0xc3, 0xe7, 0x7e},&nbsp;
+{0x00, 0x00, 0x00, 0x38, 0x38, 0x00, 0x00, 0x38, 0x38, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x30, 0x18, 0x1c, 0x1c, 0x00, 0x00, 0x1c, 0x1c, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x06, 0x0c, 0x18, 0x30, 0x60, 0xc0, 0x60, 0x30, 0x18, 0x0c, 0x06},&nbsp;
+{0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x60, 0x30, 0x18, 0x0c, 0x06, 0x03, 0x06, 0x0c, 0x18, 0x30, 0x60},&nbsp;
+{0x00, 0x00, 0x18, 0x00, 0x00, 0x18, 0x18, 0x0c, 0x06, 0x03, 0xc3, 0xc3, 0x7e},&nbsp;
+{0x00, 0x00, 0x3f, 0x60, 0xcf, 0xdb, 0xd3, 0xdd, 0xc3, 0x7e, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0xc3, 0xc3, 0xc3, 0xc3, 0xff, 0xc3, 0xc3, 0xc3, 0x66, 0x3c, 0x18},&nbsp;
+{0x00, 0x00, 0xfe, 0xc7, 0xc3, 0xc3, 0xc7, 0xfe, 0xc7, 0xc3, 0xc3, 0xc7, 0xfe},&nbsp;
+{0x00, 0x00, 0x7e, 0xe7, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xe7, 0x7e},&nbsp;
+{0x00, 0x00, 0xfc, 0xce, 0xc7, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc7, 0xce, 0xfc},&nbsp;
+{0x00, 0x00, 0xff, 0xc0, 0xc0, 0xc0, 0xc0, 0xfc, 0xc0, 0xc0, 0xc0, 0xc0, 0xff},&nbsp;
+{0x00, 0x00, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xfc, 0xc0, 0xc0, 0xc0, 0xff},&nbsp;
+{0x00, 0x00, 0x7e, 0xe7, 0xc3, 0xc3, 0xcf, 0xc0, 0xc0, 0xc0, 0xc0, 0xe7, 0x7e},&nbsp;
+{0x00, 0x00, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xff, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3},&nbsp;
+{0x00, 0x00, 0x7e, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x7e},&nbsp;
+{0x00, 0x00, 0x7c, 0xee, 0xc6, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06},&nbsp;
+{0x00, 0x00, 0xc3, 0xc6, 0xcc, 0xd8, 0xf0, 0xe0, 0xf0, 0xd8, 0xcc, 0xc6, 0xc3},&nbsp;
+{0x00, 0x00, 0xff, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0},&nbsp;
+{0x00, 0x00, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xdb, 0xff, 0xff, 0xe7, 0xc3},&nbsp;
+{0x00, 0x00, 0xc7, 0xc7, 0xcf, 0xcf, 0xdf, 0xdb, 0xfb, 0xf3, 0xf3, 0xe3, 0xe3},&nbsp;
+{0x00, 0x00, 0x7e, 0xe7, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xe7, 0x7e},&nbsp;
+{0x00, 0x00, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xfe, 0xc7, 0xc3, 0xc3, 0xc7, 0xfe},&nbsp;
+{0x00, 0x00, 0x3f, 0x6e, 0xdf, 0xdb, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0x66, 0x3c},&nbsp;
+{0x00, 0x00, 0xc3, 0xc6, 0xcc, 0xd8, 0xf0, 0xfe, 0xc7, 0xc3, 0xc3, 0xc7, 0xfe},&nbsp;
+{0x00, 0x00, 0x7e, 0xe7, 0x03, 0x03, 0x07, 0x7e, 0xe0, 0xc0, 0xc0, 0xe7, 0x7e},&nbsp;
+{0x00, 0x00, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0xff},&nbsp;
+{0x00, 0x00, 0x7e, 0xe7, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3},&nbsp;
+{0x00, 0x00, 0x18, 0x3c, 0x3c, 0x66, 0x66, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3},&nbsp;
+{0x00, 0x00, 0xc3, 0xe7, 0xff, 0xff, 0xdb, 0xdb, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3},&nbsp;
+{0x00, 0x00, 0xc3, 0x66, 0x66, 0x3c, 0x3c, 0x18, 0x3c, 0x3c, 0x66, 0x66, 0xc3},&nbsp;
+{0x00, 0x00, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x3c, 0x66, 0x66, 0xc3},&nbsp;
+{0x00, 0x00, 0xff, 0xc0, 0xc0, 0x60, 0x30, 0x7e, 0x0c, 0x06, 0x03, 0x03, 0xff},&nbsp;
+{0x00, 0x00, 0x3c, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x3c},&nbsp;
+{0x00, 0x03, 0x03, 0x06, 0x06, 0x0c, 0x0c, 0x18, 0x18, 0x30, 0x30, 0x60, 0x60},&nbsp;
+{0x00, 0x00, 0x3c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x3c},&nbsp;
+{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc3, 0x66, 0x3c, 0x18},&nbsp;
+{0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x38, 0x30, 0x70},&nbsp;
+{0x00, 0x00, 0x7f, 0xc3, 0xc3, 0x7f, 0x03, 0xc3, 0x7e, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0xfe, 0xc3, 0xc3, 0xc3, 0xc3, 0xfe, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0},&nbsp;
+{0x00, 0x00, 0x7e, 0xc3, 0xc0, 0xc0, 0xc0, 0xc3, 0x7e, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x7f, 0xc3, 0xc3, 0xc3, 0xc3, 0x7f, 0x03, 0x03, 0x03, 0x03, 0x03},&nbsp;
+{0x00, 0x00, 0x7f, 0xc0, 0xc0, 0xfe, 0xc3, 0xc3, 0x7e, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x30, 0x30, 0x30, 0x30, 0x30, 0xfc, 0x30, 0x30, 0x30, 0x33, 0x1e},&nbsp;
+{0x7e, 0xc3, 0x03, 0x03, 0x7f, 0xc3, 0xc3, 0xc3, 0x7e, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xc3, 0xfe, 0xc0, 0xc0, 0xc0, 0xc0},&nbsp;
+{0x00, 0x00, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00, 0x00, 0x18, 0x00},&nbsp;
+{0x38, 0x6c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x00, 0x00, 0x0c, 0x00},&nbsp;
+{0x00, 0x00, 0xc6, 0xcc, 0xf8, 0xf0, 0xd8, 0xcc, 0xc6, 0xc0, 0xc0, 0xc0, 0xc0},&nbsp;
+{0x00, 0x00, 0x7e, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x78},&nbsp;
+{0x00, 0x00, 0xdb, 0xdb, 0xdb, 0xdb, 0xdb, 0xdb, 0xfe, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xfc, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x7c, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x7c, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0xc0, 0xc0, 0xc0, 0xfe, 0xc3, 0xc3, 0xc3, 0xc3, 0xfe, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x03, 0x03, 0x03, 0x7f, 0xc3, 0xc3, 0xc3, 0xc3, 0x7f, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xe0, 0xfe, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0xfe, 0x03, 0x03, 0x7e, 0xc0, 0xc0, 0x7f, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x1c, 0x36, 0x30, 0x30, 0x30, 0x30, 0xfc, 0x30, 0x30, 0x30, 0x00},&nbsp;
+{0x00, 0x00, 0x7e, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0xc6, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x18, 0x3c, 0x3c, 0x66, 0x66, 0xc3, 0xc3, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0xc3, 0xe7, 0xff, 0xdb, 0xc3, 0xc3, 0xc3, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0xc3, 0x66, 0x3c, 0x18, 0x3c, 0x66, 0xc3, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0xc0, 0x60, 0x60, 0x30, 0x18, 0x3c, 0x66, 0x66, 0xc3, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0xff, 0x60, 0x30, 0x18, 0x0c, 0x06, 0xff, 0x00, 0x00, 0x00, 0x00},&nbsp;
+{0x00, 0x00, 0x0f, 0x18, 0x18, 0x18, 0x38, 0xf0, 0x38, 0x18, 0x18, 0x18, 0x0f},&nbsp;
+{0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18},&nbsp;
+{0x00, 0x00, 0xf0, 0x18, 0x18, 0x18, 0x1c, 0x0f, 0x1c, 0x18, 0x18, 0x18, 0xf0},&nbsp;
+{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x8f, 0xf1, 0x60, 0x00, 0x00, 0x00}&nbsp;
+};
+
+GLuint fontOffset;
+void makeRasterFont(void)
+{
+&nbsp;&nbsp;&nbsp; GLuint i;
+&nbsp;&nbsp;&nbsp; glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+&nbsp;&nbsp;&nbsp; fontOffset = glGenLists (128);
+&nbsp;&nbsp;&nbsp; for (i = 32; i &lt; 127; i++) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNewList(i+fontOffset, GL_COMPILE);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glBitmap(8, 13, 0.0, 2.0, 10.0, 0.0, rasters[i-32]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEndList();
+&nbsp;&nbsp;&nbsp; }
+}
+
+void myinit(void)
+{
+&nbsp;&nbsp;&nbsp; glShadeModel (GL_FLAT);
+&nbsp;&nbsp;&nbsp; makeRasterFont();
+}
+
+void printString(char *s)
+{
+&nbsp;&nbsp;&nbsp; glPushAttrib (GL_LIST_BIT);
+&nbsp;&nbsp;&nbsp; glListBase(fontOffset);
+&nbsp;&nbsp;&nbsp; glCallLists(strlen(s), GL_UNSIGNED_BYTE, (GLubyte *) s);
+&nbsp;&nbsp;&nbsp; glPopAttrib ();
+}
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; GLfloat white[3] = { 1.0, 1.0, 1.0 };
+&nbsp;&nbsp;&nbsp; int i, j;
+&nbsp;&nbsp;&nbsp; char teststring[33];
+
+&nbsp;&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; glColor3fv(white);
+&nbsp;&nbsp;&nbsp; for (i = 32; i &lt; 127; i += 32) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glRasterPos2i(20, 200 - 18*i/32);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (j = 0; j &lt; 32; j++)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; teststring[j] = (char) (i+j);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; teststring[32] = 0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printString(teststring);
+&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; glRasterPos2i(20, 100);
+&nbsp;&nbsp;&nbsp; printString("The quick brown fox jumps");
+&nbsp;&nbsp;&nbsp; glRasterPos2i(20, 82);
+&nbsp;&nbsp;&nbsp; printString("over a lazy dog.");
+&nbsp;&nbsp;&nbsp; glFlush ();
+}
+void myReshape(GLsizei w, GLsizei h)
+{
+&nbsp;&nbsp;&nbsp; glViewport(0, 0, w, h);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glLoadIdentity();
+&nbsp;&nbsp;&nbsp; glOrtho (0.0, w, 0.0, h, -1.0, 1.0);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_MODELVIEW);
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode (AUX_SINGLE | AUX_RGBA);
+&nbsp;&nbsp;&nbsp; auxInitPosition (0, 0, 500, 500);
+&nbsp;&nbsp;&nbsp; auxInitWindow (argv[0]);
+&nbsp;&nbsp;&nbsp; myinit();
+&nbsp;&nbsp;&nbsp; auxReshapeFunc (myReshape);
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+
+
+<HR>
+<H2>
+Images</H2>
+An image is similar to a bitmap, but instead of containing only a single
+bit for each pixel in a rectangular region of the screen, an image can
+contain much more information. For example, an image can contain the complete
+(R, G, B, A) quadruple stored at each pixel. Images can come from several
+sources, such as:
+<UL>A photograph that's digitized with a scanner
+<BR>&nbsp;
+<P>An image that was first generated on the screen by a graphics program
+using the graphics hardware and then read back, pixel by pixel
+<BR>&nbsp;
+<P>A software program that generated the image in memory pixel by pixel</UL>
+The images you normally think of as pictures come from the color buffers.
+However, you can read or write rectangular regions of pixel data from or
+to the depth buffer or the stencil buffer. See Chapter 10 for an explanation
+of these other buffers.
+<P>In addition to simply being displayed on the screen, images can be used
+for texture maps, in which case they're essentially pasted onto polygons
+that are rendered on the screen in the normal way. See Chapter 9 for more
+information about this technique.
+<H3>
+Reading, Writing, and Copying Pixel Data</H3>
+OpenGL provides three basic commands that manipulate image data:
+<UL><B>glReadPixels()</B> - Reads a rectangular array of pixels from the
+framebuffer and stores the data in processor memory.
+<BR>&nbsp;
+<P><B>glDrawPixels()</B> - Writes a rectangular array of pixels into the
+framebuffer from data kept in processor memory.
+<BR>&nbsp;
+<P><B>glCopyPixels()</B> - Copies a rectangular array of pixels from one
+part of the framebuffer to another. This command behaves something like
+a call to <B>glReadPixels()</B> followed by a call to <B>glDrawPixels()</B>,
+but the data is never written into processor memory.</UL>
+The basic ideas behind these commands are simple, but complexity arises
+because there are many kinds of framebuffer data, many ways to store pixel
+information in computer memory, and various data conversions that can be
+performed during the reading, writing, and copying operations. All these
+possibilities translate to many different modes of operation. If all your
+program does is copy images on the screen, or read them into memory temporarily
+so that they can be copied out later, you can ignore most of these modes.
+However, if you want your program to modify the data while it's in memory
+- for example, if you have an image stored in one format but the window
+requires a different format - or if you want to save image data to a file
+for future restoration in another session or on another kind of machine
+with significantly different graphical capabilities, you have to understand
+the various modes.
+<P>The rest of this section describes the basic commands in detail. "Storing,
+Transforming, and Mapping Pixels" discusses the details of pixel-storage
+modes, pixel-transfer operations, and pixel-mapping operations. void <B>glReadPixels</B>(GLint
+<B>x</B>, GLint <B>y</B>, GLsizei <B>width</B>, GLsizei <B>height</B>,
+GLenum <B>format</B>, GLenum <B>type</B>, GLvoid *<B>pixels</B>);
+<P>Reads pixel data from the framebuffer rectangle whose lower left corner
+is at (<B>x, y</B>) and whose dimensions are <B>width</B> and <B>height</B>,
+and stores it in the array pointed to by <B>pixels</B>. <B>format</B> indicates
+the kind of pixel data elements that are read (an index value or an R,
+G, B, or A component value, as listed in Table 8-1 ), and <B>type</B> indicates
+the data type of each element (see Table 8-2 ).
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 8-1 : </B>Pixel Formats for Use with glReadPixels()
+or glDrawPixels()</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Name</TH>
+
+<TH>Kind of Pixel Data&nbsp;</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_COLOR_INDEX</TD>
+
+<TD>A single color index&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_RGB</TD>
+
+<TD>A red color component, followed by a green color component, followed
+by a blue color component</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_RGBA</TD>
+
+<TD>A red color component, followed by a green color component, followed
+by a blue color component, followed by an alpha color component</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_RED</TD>
+
+<TD>A single red color component</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_GREEN</TD>
+
+<TD>A single green color component&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_BLUE</TD>
+
+<TD>A single blue color component</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ALPHA</TD>
+
+<TD>A single alpha color component&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LUMINANCE</TD>
+
+<TD>A single luminance component&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LUMINANCE_ALPHA&nbsp;</TD>
+
+<TD>A luminance component followed by an alpha color component&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_STENCIL_INDEX&nbsp;</TD>
+
+<TD>A single stencil index&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DEPTH_COMPONENT&nbsp;</TD>
+
+<TD>A single depth component&nbsp;</TD>
+</TR>
+</TABLE>
+
+<P>void <B>glDrawPixels</B>(GLsizei <B>width</B>, GLsizei <B>height</B>,
+GLenum <B>format</B>, GLenum <B>type</B>, const GLvoid *<B>pixels</B>);
+<P>Draws a rectangle of pixel data with dimensions <B>width</B> and <B>height</B>.
+The pixel rectangle is drawn with its lower left corner at the current
+raster position. The <B>format</B> and <B>type</B> parameters have the
+same meaning as with <B>glReadPixels()</B>. The array pointed to by <B>pixels</B>
+contains the pixel data to be drawn. If the current raster position is
+invalid, nothing is drawn, and it remains invalid.
+<P>Remember that, depending on the format, anywhere from one to four elements
+are read or written. For example, if the format is GL_RGBA, and you're
+reading into 32-bit integers (that is, if <B>type</B> = GL_INT), then every
+pixel read requires 16 bytes of storage (4 components × 4 bytes/compenents).
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 8-2 : </B>Data Types for glReadPixels() or
+glDrawPixels()</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Name</TH>
+
+<TH>Data Type</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNSIGNED_BYTE</TD>
+
+<TD>unsigned 8-bit integer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_BYTE</TD>
+
+<TD>signed 8-bit integer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_BITMAP</TD>
+
+<TD>single bits in unsigned 8-bit integers</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNSIGNED_SHORT</TD>
+
+<TD>unsigned 16-bit integer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_SHORT</TD>
+
+<TD>signed 16-bit integer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNSIGNED_INT</TD>
+
+<TD>unsigned 32-bit integer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INT</TD>
+
+<TD>32-bit integer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_FLOAT</TD>
+
+<TD>single-precision floating point</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>Each element of the saved image is stored in memory as indicated by
+Table 8-2 . If the element represents a continuous value, such as a red,
+green, blue, or luminance component, each value is scaled to fit into the
+number of bits available. For example, the red component is a floating-point
+value between 0.0 and 1.0. If it needs to be packed into an unsigned byte,
+only 8 bits of precision are kept, even if more bits are allocated to the
+red component in the framebuffer. GL_UNSIGNED_SHORT and GL_UNSIGNED_INT
+give 16 and 32 bits of precision, respectively. The normal (signed) versions
+of GL_BYTE, GL_SHORT, and GL_INT have 7, 15, and 31 bits of precision,
+since the negative values are typically not used.
+<P>If the element is an index (a color index or a stencil index, for example),
+and the type is not GL_FLOAT, the value is simply masked against the available
+bits in the type. The signed versions - GL_BYTE, GL_SHORT, and GL_INT -
+have masks with one fewer bit. For example, if a color index is to be stored
+in a signed 8-bit integer, it's first masked against 0xff, a mask containing
+seven 1s. If the type is GL_FLOAT, the index is simply converted into a
+single-precision floating-point number (for example, the index 17 is converted
+to the float 17.0). void <B>glCopyPixels</B>(GLint <B>x</B>, GLint <B>y</B>,
+GLsizei <B>width</B>, GLsizei <B>height</B>, GLenum <B>type</B>);
+<P>Copies pixel data from the framebuffer rectangle whose lower left corner
+is at (<B>x, y</B>) and whose dimensions are <B>width</B> and <B>height</B>.
+The data is copied to a new position whose lower left corner is given by
+the current raster position. The <B>type</B> parameter is either GL_COLOR,
+GL_STENCIL, or GL_DEPTH. <B>glCopyPixels()</B> behaves much like a <B>glReadPixels()</B>
+followed by a <B>glDrawPixels()</B>, with the following translation for
+the <B>type</B> to<B> format </B>parameter:
+<UL>If <B>type</B> is GL_DEPTH or GL_STENCIL, then GL_DEPTH_COMPONENT or
+GL_STENCIL_INDEX is used, respectively.
+<BR>&nbsp;
+<P>If GL_COLOR is specified, GL_RGBA or GL_COLOR_INDEX is used, depending
+on whether the system is in RGBA or color-index mode.</UL>
+<B>glCopyPixels()</B> applies all the pixel transformations, transfer functions,
+and so on during what would be the <B>glReadPixels()</B> activity. The
+resulting data is written as it would be by <B>glDrawPixels()</B>, but
+the transformations aren't applied a second time. Note that there's no
+need for a <B>format</B> or <B>data</B> parameter for <B>glCopyPixels()</B>,
+since the data is never copied into processor memory. For all three functions,
+the exact conversions of the data going to or from the framebuffer depend
+on the modes in effect at the time. See the next section for details.
+<H3>
+Magnifying or Reducing an Image</H3>
+Normally, each pixel in an image is written to a single pixel on the screen.
+However, you can arbitrarily magnify or reduce an image by using <B>glPixelZoom()</B>.
+void <B>glPixelZoom</B>(GLfloat <B>zoom</B>x, GLfloat <B>zoom</B>y);
+<P>Sets the magnification or reduction factors for pixel-write operations,
+in the <I>x-</I> and <I>y-</I>dimensions. By default, <B>zoom</B>x and
+<B>zoom</B>y are 1.0. If they're both 2.0, each image pixel is drawn to
+4 screen pixels. Note that fractional magnification or reduction factors
+are allowed, as are negative factors.
+<P><B>Advanced</B>
+<P>During rasterization, each image pixel is treated as a <B>zoom</B>x
+× <B>zoom</B>y quadrilateral, and fragments are generated for all the pixels
+whose centers lie within the quadrilateral. More specifically, let (<B>x</B>rp,
+<B>y</B>rp) be the current raster position. If a particular group of elements
+(index or components) is the <I>n</I>th in a row and belongs to the <I>m</I>th
+column, consider the region in window coordinates bounded by the rectangle
+with corners at
+<P>(<I>x</I>rp + <I>zoom</I>x<I>n</I>, <I>y</I>rp + <I>zoom</I>y<I>m</I>)
+and (<I>x</I>rp + <I>zoom</I>x(<I>n</I>+1), <I>y</I>rp + <I>zoom</I>y(<I>m</I>+1))
+<P>Any fragments whose centers lie inside this rectangle (or on its bottom
+or left boundaries) are produced in correspondence with this particular
+group of elements.
+<P>
+
+<HR>
+<H2>
+Storing, Transforming, and Mapping Pixels</H2>
+This section discusses the details of the pixel-storage and -transfer modes,
+including how to set up an arbitrary mapping to convert pixel data as it's
+transferred. Remember that you need to use these modes only if you need
+to convert pixel data from one format to another.
+<H3>
+Overview of the Pixel Modes</H3>
+An image stored in memory has between one and four chunks of data, called
+<I>elements</I>, for each pixel in a rectangular portion of the screen.
+The data might consist of just the color index or the luminance (luminance
+is the possibly weighted sum of the red, green, and blue values), or it
+might consist of the red, green, blue, and alpha components for each pixel.
+The possible arrangements of pixel data, or <I>formats</I>, determine the
+number of elements stored for each pixel and their order.
+<P>Some elements (such as a color index or a stencil index) are integers,
+and others (such as the red, green, blue, and alpha components, or the
+depth component) are floating-point values, typically ranging between 0.0
+and 1.0. Floating-point components are usually stored in your bitplanes
+in fixed-point with lower resolution than a full floating-point number
+would require (typically 8 bits are used for color components, for example).
+The exact number of bits used to represent the components depends on the
+particular hardware being used. Thus, it's often wasteful to store each
+component as a full 32-bit floating-point number, especially since images
+can easily contain a million pixels.
+<P>Elements can be stored in memory as various data types, ranging from
+8-bit bytes to 32-bit integers or floating-point numbers. OpenGL explicitly
+defines the conversion of each component in each format to each of the
+possible data types. Keep in mind that you can lose data if you try to
+store a high-resolution component in a type represented by a small number
+of bits.
+<P>Image data is typically stored in processor memory in rectangular two-
+or three-dimensional arrays. Often, you want to display or store a subimage
+that corresponds to a subrectangle of the array. In addition, you might
+need to take into account that different machines have different byte-ordering
+conventions. Finally, some machines have hardware that is far more efficient
+at moving data to and from the framebuffer if the data is aligned on two-byte,
+four-byte, or eight-byte boundaries in processor memory. For such machines,
+you probably want to control the byte alignment. All the issues raised
+in this paragraph are controlled as pixel-storage modes; you specify these
+modes using the command <B>glPixelStore*()</B>, which you've seen used
+in a couple of example programs.
+<P>As image data is transferred from memory into the framebuffer, or from
+the framebuffer into memory, OpenGL can perform several operations on it.
+For example, the ranges of components can be altered - normally, the red
+component is between 0.0 and 1.0, but you might prefer to keep it in some
+other range, or perhaps the data you're using from a different graphics
+system stores the red component in a different range. You can even create
+maps to perform arbitrary conversion of color indices or color components
+during pixel transfer. Conversions such as these performed during the transfer
+of pixels to and from the framebuffer are called pixel-transfer modes.
+Not too surprisingly, they're controlled with the <B>glPixelTransfer*()</B>
+and <B>glPixelMap*() </B>commands.
+<P>Other modes that can be controlled include the framebuffer from which
+pixels are read, and any magnification that's to be performed on pixels
+as they are written to the framebuffer.
+<P>Finally, be aware that although the color, depth, and stencil buffers
+have many similarities, they don't behave identically, and a few of the
+modes have special cases for special buffers. All the mode details are
+covered in the sections that follow, including all the special cases.
+<H3>
+Controlling Pixel-Storage Modes</H3>
+All the possible pixel-storage modes are controlled with the <B>glPixelStore*()</B>
+command. Typically, several successive calls are made with this command
+to set several parameter values. void <B>glPixelStore</B>{if}(GLenum <B>pname</B>,
+<B>TYPEparam</B>);
+<P>Sets the pixel-storage modes, which affect the operation of <B>glDrawPixels*()</B>,
+<B>glReadPixels*()</B>, <B>glBitmap()</B>, <B>glPolygonStipple()</B>, <B>glTexImage1D()</B>,
+<B>glTexImage2D()</B>, and <B>glGetTexImage()</B>. The possible parameter
+names for <B>pname</B> are shown in Table 8-3 , along with their data type,
+initial value, and valid range of values. The GL_UNPACK* parameters control
+how data is unpacked from memory by <B>glDrawPixels*()</B>, <B>glBitmap()</B>,
+<B>glPolygonStipple()</B>, <B>glTexImage1D()</B>, and <B>glTexImage2D()</B>.
+The GL_PACK* parameters control how data is packed into memory by <B>glReadPixels*()</B>
+and <B>glGetTexImage()</B>.
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 8-3 : </B>Parameters for Use with glPixelStore()</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Parameter Name</TH>
+
+<TH>Type</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Valid Range&nbsp;</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_SWAP_BYTES, GL_PACK_SWAP_BYTES</TD>
+
+<TD>GLboolean</TD>
+
+<TD>FALSE</TD>
+
+<TD>TRUE/FALSE</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_LSB_FIRST, GL_PACK_LSB_FIRST</TD>
+
+<TD>GLboolean</TD>
+
+<TD>FALSE</TD>
+
+<TD>TRUE/FALSE</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_ROW_LENGTH, GL_PACK_ROW_LENGTH</TD>
+
+<TD>GLint</TD>
+
+<TD>0</TD>
+
+<TD>any nonnegative integer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_SKIP_ROWS, GL_PACK_SKIP_ROWS</TD>
+
+<TD>GLint</TD>
+
+<TD>0</TD>
+
+<TD>any nonnegative integer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_SKIP_PIXELS, GL_PACK_SKIP_PIXELS</TD>
+
+<TD>GLint</TD>
+
+<TD>0</TD>
+
+<TD>any nonnegative integer</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_UNPACK_ALIGNMENT, GL_PACK_ALIGNMENT</TD>
+
+<TD>GLint</TD>
+
+<TD>4</TD>
+
+<TD>1, 2, 4, 8</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>Since the corresponding parameters for packing and unpacking have the
+same meanings, they're discussed together in the rest of this section and
+referred to without the GL_PACK or GL_UNPACK prefix. For example, *SWAP_BYTES
+refers to GL_PACK_SWAP_BYTES and GL_UNPACK_SWAP_BYTES.
+<P>If the *SWAP_BYTES parameter is FALSE (the default), the ordering of
+the bytes in memory is whatever is native for the OpenGL client; otherwise,
+the bytes are reversed. The byte reversal applies to any size element.
+<P>As long as your OpenGL application doesn't share images with other machines,
+you can ignore the issue of byte ordering. If your application must render
+an OpenGL image that was created on a different machine, and the "endianness"
+of the two machines differs, byte ordering can be swapped using *SWAP_BYTES.
+<P>The *LSB_FIRST parameter applies when drawing or reading 1-bit images
+or bitmaps, for which a single bit of data is saved or restored for each
+pixel. If *LSB_FIRST is FALSE (the default), the bits are taken from the
+bytes starting with the most significant bit; otherwise, they're taken
+in the opposite order. For example, if *LSB_FIRST is FALSE, and the byte
+in question is 0x31, the bits, in order, are {0, 0, 1, 1, 0, 0, 0, 1}.
+If *LSB_FIRST is TRUE, the order is {1, 0, 0, 0, 1, 1, 0, 0}.
+<P>Sometimes you want to draw or read only a subrectangle of the entire
+rectangle of image data that's stored in memory. If the rectangle in memory
+is larger than the subrectangle that's being drawn or read, you need to
+specify the actual length of the larger rectangle with *ROW_LENGTH. If
+*ROW_LENGTH is zero (which it is by default), the row length is understood
+to be the same as the width that's specified with <B>glReadPixels*()</B>,
+<B>glDrawPixels*()</B>, or <B>glCopyPixels()</B>. You also need to specify
+the number of rows and pixels to skip before starting to copy the data
+for the subrectangle. These numbers are set using the parameters *SKIP_ROWS
+and *SKIP_PIXELS, as shown in Figure 8-4 . By default, both parameters
+are 0, so you start at the lower left corner.
+<P><IMG SRC="figures/fig8-4.gif" ALT="[IMAGE]" NOSAVE >
+<P><B>Figure 8-4 : </B>The *SKIP_ROWS, *SKIP_PIXELS, and *ROW_LENGTH Parameters
+<BR>&nbsp;
+<BR>&nbsp;
+<P>Often, a particular machine's hardware is optimized for moving pixel
+data to and from memory if the data is saved in memory with a particular
+byte alignment. For example, in a machine with 32-bit words, hardware can
+often retrieve data much faster if it's initially aligned on a 32-bit boundary,
+which typically has an address that is a multiple of 4. Likewise, 64-bit
+architectures might work better when the data is aligned to eight-byte
+boundaries. On some machines, however, byte alignment makes no difference.
+<P>As an example, suppose your machine works better with pixel data aligned
+to a four-byte boundary. Images are most efficiently saved by forcing the
+data for each row of the image to begin on a four-byte boundary. If the
+image is 5 pixels wide, and each pixel consists of one byte each of red,
+green, and blue information, a row requires 5 × 3 = 15 bytes of data. Maximum
+display efficiency can be achieved if the first row, and each successive
+row, begins on a four-byte boundary, so there is one byte of waste in the
+memory storage for each row. If your data is stored like this, set the
+*ALIGNMENT parameter appropriately (to 4, in this case).
+<P>If *ALIGNMENT is set to 1, the next available byte is used. If it's
+2, at the end of each row, a byte is skipped if necessary, so that the
+first byte of the next row has an address that's a multiple of 2. In the
+case of bitmaps (or one-bit images) where a single bit is saved for each
+pixel, the same byte alignment works, although you have to count individual
+bits. For example, if you're saving a single bit per pixel, the row length
+is 75, and the alignment is 4, each row requires 75/8, or 9 3/8 bytes.
+Since 12 is the smallest multiple of 4 that is bigger than 9 3/8, twelve
+bytes of memory are used for each row.
+<H3>
+Pixel-Transfer Operations</H3>
+You can perform various operations on pixels as they're transferred from
+and to the framebuffer. The continuous components, including the red, green,
+blue, alpha, and depth components, can have an affine transformation applied.
+In addition, after transformation, these components - as well as the color-index
+and stencil values - can be transformed by an arbitrary table lookup.
+<P>Some of the pixel-transfer function characteristics are set with <B>glPixelTransfer*()</B>.
+The other characteristics are specified with <B>glPixelMap*()</B>, which
+is described in the next section.void <B>glPixelTransfer</B>{if}(GLenum
+<B>pname</B>, <B>TYPEparam</B>);
+<P>Sets pixel-transfer modes that affect the operation of <B>glDrawPixels*()</B>,
+<B>glReadPixels*()</B>, <B>glCopyPixels()</B>,<B> glTexImage1D()</B>, <B>glTexImage2D()</B>,
+and <B>glGetTexImage()</B>. The parameter <B>pname</B> must be one of those
+listed in the first column of Table 8-4 , and its value, <B>param</B>,
+must be in the valid range shown.
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 8-4 : </B>Parameters for Use with glPixelTransfer*()</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Parameter Name</TH>
+
+<TH>Type</TH>
+
+<TH>Initial Value</TH>
+
+<TH>Valid Range</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAP_COLOR</TD>
+
+<TD>GLboolean</TD>
+
+<TD>FALSE</TD>
+
+<TD>TRUE/FALSE&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_MAP_STENCIL</TD>
+
+<TD>GLboolean</TD>
+
+<TD>FALSE</TD>
+
+<TD>TRUE/FALSE&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INDEX_SHIFT</TD>
+
+<TD>GLint</TD>
+
+<TD>0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_INDEX_OFFSET</TD>
+
+<TD>GLint</TD>
+
+<TD>0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_RED_SCALE</TD>
+
+<TD>GLfloat</TD>
+
+<TD>1.0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_GREEN_SCALE</TD>
+
+<TD>GLfloat</TD>
+
+<TD>1.0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_BLUE_SCALE</TD>
+
+<TD>GLfloat</TD>
+
+<TD>1.0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ALPHA_SCALE</TD>
+
+<TD>GLfloat</TD>
+
+<TD>1.0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DEPTH_SCALE</TD>
+
+<TD>GLfloat</TD>
+
+<TD>1.0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_RED_BIAS</TD>
+
+<TD>GLfloat</TD>
+
+<TD>0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_GREEN_BIAS</TD>
+
+<TD>GLfloat</TD>
+
+<TD>0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_BLUE_BIAS</TD>
+
+<TD>GLfloat</TD>
+
+<TD>0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_ALPHA_BIAS</TD>
+
+<TD>GLfloat</TD>
+
+<TD>0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_DEPTH_BIAS</TD>
+
+<TD>GLfloat</TD>
+
+<TD>0</TD>
+
+<TD>(- &amp;infin; , &amp;infin; )&nbsp;</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>If the GL_MAP_COLOR or GL_MAP_STENCIL parameter is TRUE, then mapping
+is enabled. See the next section to learn how the mapping is done and how
+to change the contents of the maps. All the other parameters directly affect
+the pixel component values.
+<P>The pixel conversions performed when going from framebuffer to memory
+(reading) are similar but not identical to the conversions performed when
+going in the opposite direction (drawing), as explained in the following
+sections.
+<H4>
+The Pixel Rectangle-Drawing Process in Detail</H4>
+Figure 8-5 and the following paragraphs describe the operation of drawing
+pixels into the framebuffer.
+<P><IMG SRC="figures/drawpixels.gif" ALT="[IMAGE]" NOSAVE >
+<P><B>Figure 8-5 : </B>Drawing Pixels with glDrawPixels*()
+<BR>&nbsp;
+<BR>&nbsp;
+<OL>If the pixels aren't indices (color or stencil), the first step is
+to convert the components to floating-point format if necessary. See Table
+5-1 for the details of the conversion.
+<BR>&nbsp;
+<P>If the format is GL_LUMINANCE or GL_LUMINANCE_ALPHA, the luminance element
+is converted into R, G, and B, by using the luminance value for each of
+the R, G, and B components. In GL_LUMINANCE_ALPHA format, the alpha value
+becomes the A value. If A is missing, it's set to 1.0.
+<BR>&nbsp;
+<P>Each component (R, G, B, A, or depth) is multiplied by the appropriate
+scale, and the appropriate bias is added. For example, the R component
+is multiplied by the value corresponding to GL_RED_SCALE, and added to
+the value corresponding to GL_RED_BIAS.
+<BR>&nbsp;
+<P>If GL_MAP_COLOR is true, each of the R, G, B, and A components is clamped
+to the range [0.0,1.0], multiplied by an integer one less than the table
+size, truncated, and looked up in the table. See "Pixel Mapping" for more
+details.
+<BR>&nbsp;
+<P>Next, the R, G, B, and A components are clamped to [0.0,1.0] if they
+weren't already, and they're converted to fixed-point with as many bits
+to the left of the binary point as there are in the corresponding framebuffer
+component.
+<BR>&nbsp;
+<P>If you're working with index values (stencil or color indices), then
+the values are first converted to fixed-point (if they were initially floating-point
+numbers) with some unspecified bits to the right of the binary point. Indices
+that were initially fixed-point remain so, and any bits to the right of
+the binary point are set to zero.
+<BR>&nbsp;
+<P>The resulting index value is then shifted right or left by the absolute
+value of GL_INDEX_SHIFT bits; the value is shifted left if GL_INDEX_SHIFT
+> 0 and right otherwise. Finally, GL_INDEX_OFFSET is added to the index.
+<BR>&nbsp;
+<P>The next step with indices depends on whether you're using RGBA mode
+or index mode. In RGBA mode, a color index is converted to RGBA using the
+color components specified by GL_PIXEL_MAP_I_TO_R, GL_PIXEL_MAP_I_TO_G,
+GL_PIXEL_MAP_I_TO_B, and GL_PIXEL_MAP_I_TO_A (see the next section for
+details). Otherwise, if GL_MAP_COLOR is TRUE, a color index is looked up
+through the table GL_PIXEL_MAP_I_TO_I. (If GL_MAP_COLOR is FALSE, the index
+is unchanged.) If the image is made up of stencil indices rather than color
+indices, and if GL_MAP_STENCIL is TRUE, the index is looked up in the table
+corresponding to GL_PIXEL_MAP_S_TO_S. If GL_MAP_STENCIL is FALSE, the stencil
+index is unchanged.</OL>
+
+<H4>
+The Pixel Rectangle-Reading Process in Detail</H4>
+During the pixel reading process, many of the same conversions are done,
+as shown in Figure 8-6 and as described in the following paragraphs.
+<P><IMG SRC="figures/readpixels.gif" ALT="[IMAGE]" NOSAVE >
+<P><B>Figure 8-6 : </B>Reading Pixels with glReadPixels*()
+<BR>&nbsp;
+<BR>&nbsp;
+<P>If the pixels to be read aren't indices (color or stencil), the components
+are mapped to [0.0,1.0] - that is, in exactly the opposite way that they
+are when written. Next, the scales and biases are applied to each component.
+If GL_MAP_COLOR is TRUE, they're mapped and again clamped to [0.0,1.0].
+If luminance is desired instead of RGB, the R, G, and B components are
+added (L = R + G + B). Finally, the results are packed into memory according
+to the GL_PACK* modes set with <B>glPixelStore*()</B>.
+<P>If the pixels are indices (color or stencil), they're shifted and offset,
+and mapped if GL_MAP_COLOR is TRUE. If the storage format is either GL_COLOR_INDEX
+or GL_STENCIL_INDEX, the pixel indices are masked to the number of bits
+of the storage type (1, 8, 16, or 32) and packed into memory as described
+previously. If the storage format is one of the component kind (such as
+luminance or RGB), the pixels are always mapped by the index-to-RGBA maps.
+Then, they're treated as though they had been RGBA pixels in the first
+place (including perhaps being converted to luminance).
+<P>The scaling, bias, shift, and offset values are the same as those used
+when drawing pixels, so if you're doing both reading and drawing of pixels,
+be sure to reset these components to the appropriate values before doing
+a read or a draw. Similarly, the various maps (see the next section) must
+also be properly reset if you intend to use maps for both reading and drawing.
+<P>It might seem that luminance is handled incorrectly in both the reading
+and drawing operations. For example, luminance is not usually equally dependent
+on the R, G, and B components as it seems above. If you wanted your luminance
+to be calculated such that the R component contributed 30 percent, the
+G 59 percent, and the B 11 percent, you could set GL_RED_SCALE to .30,
+GL_RED_BIAS to 0.0, and so on. Then the computed L is then .30R + .59G
++ .11B.
+<H3>
+Pixel Mapping</H3>
+As mentioned in the previous section, all the color components, color indices,
+and stencil indices can be modified by means of a table lookup before being
+placed in screen memory. The command for controlling this mapping is <B>glPixelMap*()</B>.
+void <B>glPixelMap</B>[ui us f}<B>v</B>(GLenum <B>map</B>, GLint <B>mapsize</B>,
+const <B>TYPE *values</B>);
+<P>Loads the pixel map indicated by <B>map</B> with <B>mapsize</B> entries,
+whose values are pointed to by <B>values</B>. Table 8-5 lists the map names
+and values; the default sizes are all 1 and the default values are all
+0. Each map's size must be a power of 2.
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 8-5 : </B>Valid Parameter Names and Values
+for Use with glPixelMap*()</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Map Name</TH>
+
+<TH>Address</TH>
+
+<TH>Value</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MAP_I_TO_I&nbsp;</TD>
+
+<TD>color index&nbsp;</TD>
+
+<TD>color index&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MAP_S_TO_S</TD>
+
+<TD>stencil index&nbsp;</TD>
+
+<TD>stencil index&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MAP_I_TO_R&nbsp;</TD>
+
+<TD>color index</TD>
+
+<TD>R</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MAP_I_TO_G</TD>
+
+<TD>color index</TD>
+
+<TD>G</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MAP_I_TO_B&nbsp;</TD>
+
+<TD>color index</TD>
+
+<TD>B</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MAP_I_TO_A</TD>
+
+<TD>color index</TD>
+
+<TD>A</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MAP_R_TO_R</TD>
+
+<TD>R</TD>
+
+<TD>R</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MAP_G_TO_G</TD>
+
+<TD>G</TD>
+
+<TD>G</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MAP_B_TO_B</TD>
+
+<TD>B</TD>
+
+<TD>B</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_PIXEL_MAP_A_TO_A</TD>
+
+<TD>A</TD>
+
+<TD>A</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>The maximum size of the maps is machine-dependent. You can find the
+sizes of the pixel maps supported on your machine with the <B>glGet*()</B>
+command: Use the query argument GL_MAX_PIXEL_MAP_TABLE to obtain the maximum
+size for all the pixel map tables, and use GL_PIXEL_MAP_*_TO_*_SIZE to
+obtain the current size of the specified map. The six maps whose address
+is a color index must always be sized to an integral power of 2. The four
+RGBA maps can be any size from 1 through GL_MAX_PIXEL_MAP_TABLE.
+<P>To illustrate how a table works, let's look at a simple example. Suppose
+that you want to create a 256-entry table that maps color indices to color
+indices using GL_PIXEL_MAP_I_TO_I. You create a table with an entry for
+each of the values between 0 and 255, and initialize the table with <B>glPixelMap*()</B>.
+Let's say that you're using the table for thresholding, for example, and
+you want to map all indices 100 and below to 0, and all indices 101 and
+above to 255. In this case, your table consists of 101 0s and 155 255s.
+The pixel map is enabled using the routine <B>glPixelTransfer*()</B> to
+set the parameter GL_MAP_COLOR to TRUE. Once the pixel map is loaded and
+enabled, incoming color indices below 101 come out as 0, and incoming pixels
+between 101 and 255 are mapped to 255. If the incoming pixel is larger
+than 255, it's first masked by 255, throwing out all the bits beyond the
+eighth, and the resulting masked value is looked up in the table. If the
+incoming index is a floating-point value (say 88.14585), it's rounded to
+the nearest integer value (giving 88), and that number is looked up in
+the table (giving 0).
+<P>
+<HR><A HREF="chapter07.html">[Previous chapter]</A> <A HREF="chapter09.html">[Next
+chapter]
+<HR></A>See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>

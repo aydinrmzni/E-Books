@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Appendix F - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<HR>
+<H1>
+Appendix F<BR>
+Calculating Normal Vectors</H1>
+This appendix describes how to calculate normal vectors for surfaces. You
+need to define normals to use OpenGL's lighting facility, which is described
+in Chapter 6, "Lighting.""Normal Vectors" introduces normals and the OpenGL
+command for specifying them. This appendix goes through the details of
+calculating them. It has the following major sections:
+<UL>"Finding Normals for Analytic Surfaces"
+<BR>&nbsp;
+<P>"Finding Normals from Polygonal Data"</UL>
+Since normals are perpendicular to a surface, you can find the normal at
+a particular point on a surface by first finding the flat plane that just
+touches the surface at that point. The normal is the vector that's perpendicular
+to that plane. On a perfect sphere, for example, the normal at a point
+on the surface is in the same direction as the vector from the center of
+the sphere to that point. For other types of surfaces, there are other,
+better means for determining the normals, depending on how the surface
+is specified.
+<P>Recall that smooth curved surfaces are approximated by a large number
+of small flat polygons. If the vectors perpendicular to these polygons
+are used as the surface normals in such an approximation, the surface appears
+faceted, since the normal direction is discontinuous across the polygonal
+boundaries. In many cases, however, an exact mathematical description exists
+for the surface, and true surface normals can be calculated at every point.
+Using the true normals improves the rendering considerably, as shown in
+Figure F-1 . Even if you don't have a mathematical description, you can
+do better than the faceted look shown in the figure. The two major sections
+in this appendix describe how to calculate normal vectors for these two
+cases:
+<UL>"Finding Normals for Analytic Surfaces" explains what to do when you
+have a mathematical description of a surface.
+<BR>&nbsp;
+<P>"Finding Normals from Polygonal Data" covers the case when you have
+only the polygonal data to describe a surface.</UL>
+<IMG SRC="figures/polytrue.gif" ALT="[IMAGE]" NOSAVE >
+<P><B>Figure F-1 : </B>Rendering with Polygonal Normals vs. True Normals
+<BR>&nbsp;
+<BR>&nbsp;
+<P>
+<HR>
+<H2>
+<A NAME="X"></A>Finding Normals for Analytic Surfaces</H2>
+Analytic surfaces are smooth, differentiable surfaces that are described
+by a mathematical equation (or set of equations). In many cases, the easiest
+surfaces to find normals for are analytic surfaces for which you have an
+explicit definition in the following form:
+<P><B>V</B>(<B>s,t</B>) = [ <B>X</B>(<B>s,t</B>) <B>Y</B>(<B>s,t</B>) <B>Z</B>(<B>s,t</B>)
+]
+<P>where <I>s</I> and <B>t</B> are constrained to be in some domain, and
+<B>X</B>, <B>Y</B>, and <B>Z</B> are differentiable functions of two variables.
+To calculate the normal, find
+<P><IMG SRC="figures/eqapf01.gif" ALT="[IMAGE]" NOSAVE >
+<P>which are vectors tangent to the surface in the <I>s</I> and <I>t</I>
+directions. The cross product
+<P><IMG SRC="figures/eqapf02.gif" ALT="[IMAGE]" NOSAVE >
+<P>is perpendicular to both, and hence to the surface. The following shows
+how to calculate the cross product of two vectors. (Watch out for the degenerate
+cases where the cross product has zero length!)
+<P><IMG SRC="figures/eqapf03.gif" ALT="[IMAGE]" NOSAVE >
+<P>You should probably normalize the resulting vector. To normalize a vector
+[<B>x</B>,<B>y</B>,<B>z</B>], calculate its length
+<P><IMG SRC="figures/eqapf04.gif" ALT="[IMAGE]" NOSAVE >
+<P>and divide each component of the vector by the length.
+<P>As an example of these calculations, consider the analytic surface
+<P><B>V</B>(<B>s,t</B>) = [ <B>s</B>2<B> t</B>3 3-<B>st</B> ]
+<P>From this we have
+<P><IMG SRC="figures/eqapf05.gif" ALT="[IMAGE]" NOSAVE >
+<P>So, for example, when<B> s</B>=1 and<B> t</B>=2, the corresponding point
+on the surface is (1, 8, 1), and the vector (-24, 2, 24) is perpendicular
+to the surface at that point. The length of this vector is 34, so the unit
+normal vector is (-24/34, 2/34, 24/34) = (-0.70588, 0.058823, 0.70588).
+<P>For analytic surfaces that are described implicitly, as <B>F</B>(<B>x,
+y, z</B>) = 0, the problem is harder. In some cases, you can solve for
+one of the variables, say <B>z</B> = <B>G</B>(<B>x, y</B>), and put it
+in the explicit form given previously:
+<P><IMG SRC="figures/eqapf06.gif" ALT="[IMAGE]" NOSAVE >
+<P>Then continue as described earlier.
+<P>If you can't get the surface equation in an explicit form, you might
+be able to make use of the fact that the normal vector is given by the
+gradient
+<P><IMG SRC="figures/eqapf07.gif" ALT="[IMAGE]" NOSAVE >
+<P>evaluated at a particular point (<I>x, y, z</I>). Calculating the gradient
+might be easy, but finding a point that lies on the surface can be difficult.
+As an example of an implicitly defined analytic function, consider the
+equation of a sphere of radius 1 centered at the origin:
+<P><I>x</I>2 + <I>y</I>2 + <I>z</I>2 - 1 = 0
+<P>This means that
+<P>F(<I>x</I>, <I>y</I>, <I>z</I>) = x2 + y2 + z2 - 1
+<P>which can be solved for<I> z</I> to yield
+<P><IMG SRC="figures/eqapf08.gif" ALT="[IMAGE]" NOSAVE >
+<P>Thus, normals can be calculated from the explicit form
+<P><IMG SRC="figures/eqapf09.gif" ALT="[IMAGE]" NOSAVE >
+<P>as described previously.
+<P>If you could not solve for <I>z</I>, you could have used the gradient
+<P><IMG SRC="figures/eqapf10.gif" ALT="[IMAGE]" NOSAVE >
+<P>as long as you could find a point on the surface. In this case, it's
+not so hard to find a point - for example, (2/3, 1/3, 2/3) lies on the
+surface. Using the gradient, the normal at this point is (4/3, 2/3, 4/3).
+The unit-length normal is (2/3, 1/3, 2/3), which is the same as the point
+on the surface, as expected.
+<P>
+<HR>
+<H2>
+Finding Normals from Polygonal Data</H2>
+As mentioned previously, you often want to find normals for surfaces that
+are described with polygonal data such that the surfaces appear smooth
+rather than faceted. In most cases, the easiest way for you to do this
+(though it might not be the most efficient way) is to calculate the normal
+vectors for each of the polygonal facets and then to average the normals
+for neighboring facets. Use the averaged normal for the vertex that the
+neighboring facets have in common. Figure F-2 shows a surface and its polygonal
+approximation. (Of course, if the polygons represent the exact surface
+and aren't merely an approximation - if you're drawing a cube or a cut
+diamond, for example - don't do the averaging. Calculate the normal for
+each facet as described in the following paragraphs, and use that same
+normal for each vertex of the facet.)
+<P><IMG SRC="figures/normals.gif" ALT="[IMAGE]" NOSAVE >
+<P><B>Figure F-2 : </B>Averaging Normal Vectors
+<BR>&nbsp;
+<BR>&nbsp;
+<P>To find the normal for a flat polygon, take any three vertices <B>v</B>1,
+<B>v</B>2, and <B>v</B>3 of the polygon that do not lie in a straight line.
+The cross product
+<P>[<I>v</I>1 - <I>v</I>2] × [<I>v</I>2 - <I>v</I>3]
+<P>is perpendicular to the polygon. (Typically, you want to normalize the
+resulting vector.) Then you need to average the normals for adjoining facets,
+to avoid giving too much weight to one of them. For instance, in the example
+shown in Figure F-2 , if <B>n</B>1, <B>n</B>2, <B>n</B>3, and <B>n</B>4
+are the normals for the four polygons meeting at point P, calculate <B>n</B>1+<B>n</B>2+<B>n</B>3+<B>n</B>4
+and then normalize it. The resulting vector can be used as the normal for
+point P.
+<P>Sometimes, you need to vary this method for particular situations. For
+instance, at the boundary of a surface (for example, point Q in Figure
+F-2 ), you might be able to choose a better normal based on your knowledge
+of what the surface should look like. Sometimes the best you can do is
+to average the polygon normals on the boundary as well. Similarly, some
+models have some smooth parts and some sharp corners (point R is on such
+an edge in Figure F-2 ). In this case, the normals on either side of the
+crease shouldn't be averaged. Instead, polygons on one side of the crease
+should be drawn with one normal, and polygons on the other side with another.
+<P>
+<HR><A HREF="appendixe.html">[Previous chapter]</A> <A HREF="appendixg.html">[Next
+chapter]
+<HR></A>See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>

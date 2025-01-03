@@ -1,0 +1,1296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Chapter 12 - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<HR>
+<H1>
+Chapter 12<BR>
+Selection and Feedback</H1>
+<B>Chapter Objectives</B>
+<P>After reading this chapter, you'll be able to do the following:
+<UL>Create applications that allow the user to select a region of the screen
+or pick an object drawn on the screen
+<BR>&nbsp;
+<P>Use OpenGL's feedback mode to obtain the results of rendering calculations</UL>
+Some graphics applications simply draw static images of two- and three-dimensional
+objects. Other applications allow the user to identify objects on the screen
+and then to move, modify, delete, or otherwise manipulate those objects.
+OpenGL is designed to support exactly such interactive applications. Since
+objects drawn on the screen typically undergo multiple rotations, translations,
+and perspective transformations, it can be difficult for you to determine
+which object a user is selecting in a three-dimensional scene. To help
+you, OpenGL provides a selection mechanism that automatically tells you
+which objects are drawn inside a specified region of the window. You can
+use this mechanism together with a special utility routine to determine
+which object within the region the user is specifying, or <I>picking</I>,
+with the cursor.
+<P>Selection is actually a mode of operation for OpenGL; feedback is another
+such mode. In feedback mode, you use your graphics hardware and OpenGL
+to perform the usual rendering calculations. Instead of using the calculated
+results to draw an image on the screen, however, OpenGL returns (or feeds
+back) the drawing information to you. If you want to draw three-dimensional
+objects on a plotter rather than the screen, for example, you would draw
+the items in feedback mode, collect the drawing instructions, and then
+convert them to commands the plotter can understand.
+<P>In both selection and feedback modes, drawing information is returned
+to the application rather than being sent to the framebuffer, as it is
+in rendering mode. Thus, the screen remains frozen - no drawing occurs
+- while OpenGL is in selection or feedback mode. This chapter explains
+each of these modes in its own section:
+<UL>"Selection" discusses how to use selection mode and related routines
+to allow a user of your application to pick an object drawn on the screen.
+<BR>&nbsp;
+<P>"Feedback" describes how to obtain information about what would be drawn
+on the screen and how that information is formatted.</UL>
+
+<HR>
+<H2>
+<A NAME="X"></A>Selection</H2>
+Typically, when you're planning to use OpenGL's selection mechanism, you
+first draw your scene into the framebuffer and then you enter selection
+mode and redraw the scene. Once you're in selection mode, however, the
+contents of the framebuffer don't change until you exit selection mode.
+When you exit, OpenGL returns a list of the primitives that would have
+intersected the viewing volume (remember that the viewing volume is defined
+by the current modelview and projection matrices and any clipping planes
+you've specified, as explained in "Additional Clipping Planes." ) Each
+primitive that intersects the viewing volume causes a selection <I>hit</I>.
+The list of primitives is actually returned as an array of integer-valued
+<I>names</I> and related data - the <I>hit records</I> - that correspond
+to the current contents of the <I>name stack</I>. You construct the name
+stack by loading names onto it as you issue primitive drawing commands
+while in selection mode. Thus, when the list of names is returned, you
+can use it to determine which primitives might have been selected on the
+screen by the user.
+<P>In addition to this selection mechanism, OpenGL provides a utility routine
+designed to simplify selection in some cases by restricting drawing to
+a small region of the viewport. Typically, you use this routine to determine
+which objects are drawn near the cursor, so that you can identify which
+object the user is picking. You can also delimit a selection region by
+specifying additional clipping planes; see "Additional Clipping Planes"
+for more information about how to do this. Since picking is a special case
+of selection, selection is described first in this chapter, and then picking.
+<P>
+<HR>
+<H3>
+The Basic Steps</H3>
+To use the selection mechanism, you need to perform the following steps.
+<OL>Specify the array to be used for the returned hit records with <B>glSelectBuffer()</B>.
+<BR>&nbsp;
+<P>Enter selection mode by specifying GL_SELECT with <B>glRenderMode()</B>.
+<BR>&nbsp;
+<P>Initialize the name stack using <B>glInitNames()</B> and <B>glPushName()</B>.
+<BR>&nbsp;
+<P>Define the viewing volume you want to use for selection. Usually, this
+is different from the viewing volume you used to draw the scene originally,
+so you probably want to save and then restore the current transformation
+state with <B>glPushMatrix()</B> and <B>glPopMatrix()</B>.
+<BR>&nbsp;
+<P>Alternately issue primitive drawing commands and commands to manipulate
+the name stack so that each primitive of interest has an appropriate name
+assigned.
+<BR>&nbsp;
+<P>Exit selection mode and process the returned selection data (the hit
+records).</OL>
+The following paragraphs describe <B>glSelectBuffer()</B> and <B>glRenderMode()</B>.
+In the next section, the commands to manipulate the name stack are described.
+void <B>glSelectBuffer</B>(GLsizei <I>size</I>, GLuint *<I>buffer</I>);
+<P>Specifies the array to be used for the returned selection data. The
+<B>buffer</B> argument is a pointer to an array of unsigned integers into
+which the data is put, and <B>size</B> indicates the maximum number of
+values that can be stored in the array. You need to call <B>glSelectBuffer()</B>
+before entering selection mode.
+<P>GLint <B>glRenderMode</B>(GLenum <B>mode</B>);
+<P>Controls whether the application is in rendering, selection, or feedback
+mode. The <B>mode</B> argument can be one of GL_RENDER (the default), GL_SELECT,
+or GL_FEEDBACK. The application remains in a given mode until <B>glRenderMode()</B>
+is called again with a different argument. Before entering selection mode,
+<B>glSelectBuffer()</B> must be called to specify the selection array.
+Similarly, before entering feedback mode, <B>glFeedbackBuffer()</B> must
+be called to specify the feedback array. The return value for <B>glRenderMode()</B>
+has meaning if the current render mode (that is, not the <B>mode</B> parameter)
+is either GL_SELECT or GL_FEEDBACK: The return value is the number of selection
+hits or the number of values placed in the feedback array when either mode
+is exited; a negative value means that the selection or feedback array
+has overflowed. You can use GL_RENDER_MODE with <B>glGetIntegerv()</B>
+to obtain the current mode.
+<P>
+<HR>
+<H3>
+Creating the Name Stack</H3>
+As mentioned in the previous section, the name stack forms the basis for
+the selection information that's returned to you. To create the name stack,
+first you initialize it with <B>glInitNames()</B>, which simply clears
+the stack, and then you add integer names to it as you issue corresponding
+drawing commands. As you might expect, the commands to manipulate the stack
+allow you to push a name onto it (<B>glPushName()</B>), pop a name off
+of it (<B>glPopName()</B>), and replace the name on the top of the stack
+with a different one (<B>glLoadName()</B>). Example 12-1 shows what your
+name-stack manipulation code might look like with these commands.
+<P><B>Example 12-1 : </B>Creating a Name Stack
+<PRE>glInitNames();
+glPushName(-1);
+
+glPushMatrix();&nbsp;&nbsp; /* save the current transformation state */
+
+&nbsp;&nbsp;&nbsp; /* create your desired viewing volume here */
+
+&nbsp;&nbsp;&nbsp; glLoadName(1);
+&nbsp;&nbsp;&nbsp; drawSomeObject();
+&nbsp;&nbsp;&nbsp; glLoadName(2);
+&nbsp;&nbsp;&nbsp; drawAnotherObject();
+&nbsp;&nbsp;&nbsp; glLoadName(3);
+&nbsp;&nbsp;&nbsp; drawYetAnotherObject();
+&nbsp;&nbsp;&nbsp; drawJustOneMoreObject();
+
+glPopMatrix ();&nbsp;&nbsp; /* restore the previous transformation state*/</PRE>
+In this example, the first two objects to be drawn have their own names,
+and the third and fourth objects share a single name. With this setup,
+if either or both of the third and fourth objects causes a selection hit,
+only one hit record is returned to you. You can have multiple objects share
+the same name if you don't need to differentiate between them when processing
+the hit records. void <B>glInitNames</B>(void);
+<P>Clears the name stack so that it's empty.
+<P>void <B>glPushName</B>(GLuint <B>name</B>);
+<P>Pushes <B>name</B> onto the name stack. Pushing a name beyond the capacity
+of the stack generates the error GL_STACK_OVERFLOW. The name stack's depth
+can vary among different OpenGL implementations, but it must be able to
+contain at least sixty-four names. You can use the parameter GL_NAME_STACK_DEPTH
+with <B>glGetIntegerv()</B> to obtain the depth of the name stack.
+<P>void <B>glPopName</B>(void);
+<P>Pops one name off the top of the name stack. Popping an empty stack
+generates the error GL_STACK_UNDERFLOW.
+<P>void <B>glLoadName</B>(GLuint <B>name</B>);
+<P>Replaces the value on the top of the name stack with <B>name</B>. If
+the stack is empty, which it is right after <B>glInitNames()</B> is called,
+<B>glLoadName()</B> generates the error GL_INVALID_OPERATION. To avoid
+this, if the stack is initially empty, call <B>glPushName()</B> at least
+once to put something on the name stack before calling <B>glLoadName()</B>.
+<P>Calls to <B>glPushName()</B>, <B>glPopName()</B>, and <B>glLoadName()</B>
+are ignored if you're not in selection mode. You might find that it simplifies
+your code to use these calls throughout your drawing code, and then use
+the same drawing code for both selection and normal rendering modes.
+<P>
+<HR>
+<H3>
+The Hit Record</H3>
+In selection mode, a primitive that intersects the viewing volume causes
+a selection hit. Whenever a name-stack manipulation command is executed
+or <B>glRenderMode()</B> is called, OpenGL writes a hit record into the
+selection array if there's been a hit since the last time the stack was
+manipulated or <B>glRenderMode()</B> was called. With this process, objects
+that share the same name - for example, an object that's composed of more
+than one primitive - don't generate multiple hit records. Also, hit records
+aren't guaranteed to be written into the array until <B>glRenderMode()</B>
+is called.
+<P>In addition to primitives, valid coordinates produced by <B>glRasterPos()
+</B>can cause a selection hit. In the case of polygons, no hit occurs if
+the polygon would have been culled.
+<P>Each hit record consists of four items, in order:
+<UL>The number of names on the name stack when the hit occurred.
+<BR>&nbsp;
+<P>Both the minimum and maximum window-coordinate <I>z</I> values of all
+vertices of the primitives that intersected the viewing volume since the
+last recorded hit. These two values, which lie in the range [0,1], are
+each multiplied by 232-1 and rounded to the nearest unsigned integer.
+<BR>&nbsp;
+<P>The contents of the name stack at the time of the hit, with the bottommost
+element first.</UL>
+When you enter selection mode, OpenGL initializes a pointer to the beginning
+of the selection array. Each time a hit record is written into the array,
+the pointer is updated accordingly. If writing a hit record would cause
+the number of values in the array to exceed the <B>size</B> argument specified
+with <B>glSelectBuffer()</B>, OpenGL writes as much of the record as fits
+in the array and sets an overflow flag. When you exit selection mode with
+<B>glRenderMode()</B>, this command returns the number of hit records that
+were written (including a partial record if there was one), clears the
+name stack, resets the overflow flag, and resets the stack pointer. If
+the overflow flag had been set, the return value is -1.
+<P>
+<HR>
+<H3>
+A Selection Example</H3>
+In Example 12-2 , four triangles (green, red, and two yellow ones) are
+drawn in selection mode, and the corresponding hit records are processed.
+The first triangle generates a hit, the second one doesn't, and the third
+and fourth ones together generate a single hit. Routines are defined to
+draw a triangle (<B>drawTriangle()</B>) and to draw a wireframe box representing
+the viewing volume (<B>drawViewVolume()</B>). The <B>processHits()</B>
+routine prints out the selection array. Finally, <B>selectObjects()</B>
+draws the triangles in selection mode to generate the hit records.
+<P><B>Example 12-2 : </B>A Selection Example: select.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include "aux.h"
+
+void drawTriangle (GLfloat x1, GLfloat y1, GLfloat x2,&nbsp;
+&nbsp;&nbsp;&nbsp; GLfloat y2, GLfloat x3, GLfloat y3, GLfloat z)
+{
+&nbsp;&nbsp;&nbsp; glBegin (GL_TRIANGLES);
+&nbsp;&nbsp;&nbsp; glVertex3f (x1, y1, z);
+&nbsp;&nbsp;&nbsp; glVertex3f (x2, y2, z);
+&nbsp;&nbsp;&nbsp; glVertex3f (x3, y3, z);
+&nbsp;&nbsp;&nbsp; glEnd ();
+}
+
+void drawViewVolume (GLfloat x1, GLfloat x2, GLfloat y1,&nbsp;
+&nbsp;&nbsp;&nbsp; GLfloat y2, GLfloat z1, GLfloat z2)
+{
+&nbsp;&nbsp;&nbsp; glColor3f (1.0, 1.0, 1.0);
+&nbsp;&nbsp;&nbsp; glBegin (GL_LINE_LOOP);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x1, y1, -z1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x2, y1, -z1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x2, y2, -z1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x1, y2, -z1);
+&nbsp;&nbsp;&nbsp; glEnd ();
+
+&nbsp;&nbsp;&nbsp; glBegin (GL_LINE_LOOP);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x1, y1, -z2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x2, y1, -z2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x2, y2, -z2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x1, y2, -z2);
+&nbsp;&nbsp;&nbsp; glEnd ();
+
+&nbsp;&nbsp;&nbsp; glBegin (GL_LINES);&nbsp;&nbsp; /*&nbsp; 4 lines&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x1, y1, -z1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x1, y1, -z2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x1, y2, -z1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x1, y2, -z2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x2, y1, -z1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x2, y1, -z2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x2, y2, -z1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (x2, y2, -z2);
+&nbsp;&nbsp;&nbsp; glEnd ();
+}
+
+void drawScene (void)
+{
+&nbsp;&nbsp;&nbsp; glMatrixMode (GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glLoadIdentity ();
+&nbsp;&nbsp;&nbsp; gluPerspective (40.0, 4.0/3.0, 0.01, 100.0);
+
+&nbsp;&nbsp;&nbsp; glMatrixMode (GL_MODELVIEW);
+&nbsp;&nbsp;&nbsp; glLoadIdentity ();
+&nbsp;&nbsp;&nbsp; gluLookAt (7.5, 7.5, 12.5, 2.5, 2.5, -5.0, 0.0, 1.0, 0.0);
+&nbsp;&nbsp;&nbsp; glColor3f (0.0, 1.0, 0.0);&nbsp;&nbsp;&nbsp;&nbsp; /*&nbsp; green triangle */
+&nbsp;&nbsp;&nbsp; drawTriangle (2.0, 2.0, 3.0, 2.0, 2.5, 3.0, -5.0);
+&nbsp;&nbsp;&nbsp; glColor3f (1.0, 0.0, 0.0);&nbsp;&nbsp;&nbsp;&nbsp; /*&nbsp; red triangle */
+&nbsp;&nbsp;&nbsp; drawTriangle (2.0, 7.0, 3.0, 7.0, 2.5, 8.0, -5.0);
+&nbsp;&nbsp;&nbsp; glColor3f (1.0, 1.0, 0.0);&nbsp;&nbsp;&nbsp;&nbsp; /*&nbsp; yellow triangles */
+&nbsp;&nbsp;&nbsp; drawTriangle (2.0, 2.0, 3.0, 2.0, 2.5, 3.0, 0.0);
+&nbsp;&nbsp;&nbsp; drawTriangle (2.0, 2.0, 3.0, 2.0, 2.5, 3.0, -10.0);
+&nbsp;&nbsp;&nbsp; drawViewVolume (0.0, 5.0, 0.0, 5.0, 0.0, 10.0);
+}
+
+void processHits (GLint hits, GLuint buffer[])
+{
+&nbsp;&nbsp;&nbsp; unsigned int i, j;
+&nbsp;&nbsp;&nbsp; GLuint names, *ptr;
+
+&nbsp;&nbsp;&nbsp; printf ("hits = %d\n", hits);
+&nbsp;&nbsp;&nbsp; ptr = (GLuint *) buffer;
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; hits; i++) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* for each hit */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; names = *ptr;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf(" number of names for hit = %d\n", names); ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("&nbsp; z1 is %u;", *ptr); ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf (" z2 is %u\n", *ptr); ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("&nbsp;&nbsp; the name is ");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (j = 0; j &lt; names; j++) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* for each name */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("%d ", *ptr); ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("\n");
+&nbsp;&nbsp;&nbsp; }
+}
+
+#define BUFSIZE 512
+
+void selectObjects(void)
+{
+&nbsp;&nbsp;&nbsp; GLuint selectBuf[BUFSIZE];
+&nbsp;&nbsp;&nbsp; GLint hits, viewport[4];
+
+&nbsp;&nbsp;&nbsp; glSelectBuffer (BUFSIZE, selectBuf);
+&nbsp;&nbsp;&nbsp; (void) glRenderMode (GL_SELECT);
+
+&nbsp;&nbsp;&nbsp; glInitNames();
+&nbsp;&nbsp;&nbsp; glPushName(-1);
+
+&nbsp;&nbsp;&nbsp; glPushMatrix ();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glMatrixMode (GL_PROJECTION);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glLoadIdentity ();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glOrtho (0.0, 5.0, 0.0, 5.0, 0.0, 10.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glMatrixMode (GL_MODELVIEW);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glLoadIdentity ();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glLoadName(1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawTriangle (2.0, 2.0, 3.0, 2.0, 2.5, 3.0, -5.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glLoadName(2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawTriangle (2.0, 7.0, 3.0, 7.0, 2.5, 8.0, -5.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glLoadName(3);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawTriangle (2.0, 2.0, 3.0, 2.0, 2.5, 3.0, 0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawTriangle (2.0, 2.0, 3.0, 2.0, 2.5, 3.0, -10.0);
+&nbsp;&nbsp;&nbsp; glPopMatrix ();
+&nbsp;&nbsp;&nbsp; glFlush ();
+
+&nbsp;&nbsp;&nbsp; hits = glRenderMode (GL_RENDER);
+&nbsp;&nbsp;&nbsp; processHits (hits, selectBuf);
+}&nbsp;
+
+void myinit (void)&nbsp;
+{
+&nbsp;&nbsp;&nbsp; glDepthFunc(GL_LEQUAL);
+&nbsp;&nbsp;&nbsp; glEnable(GL_DEPTH_TEST);
+&nbsp;&nbsp;&nbsp; glShadeModel(GL_FLAT);
+}
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; glClearColor (0.0, 0.0, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; drawScene ();
+&nbsp;&nbsp;&nbsp; selectObjects ();
+&nbsp;&nbsp;&nbsp; glFlush();
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode (AUX_SINGLE | AUX_RGBA | AUX_DEPTH);
+&nbsp;&nbsp;&nbsp; auxInitPosition (0, 0, 200, 200);
+&nbsp;&nbsp;&nbsp; auxInitWindow (argv[0]);
+&nbsp;&nbsp;&nbsp; myinit ();
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+
+<HR>
+<H3>
+Picking</H3>
+As an extension of the process described in the previous section, you can
+use selection mode to determine if objects are picked. To do this, you
+use a special picking matrix in conjunction with the projection matrix
+to restrict drawing to a small region of the viewport, typically near the
+cursor. Then you allow some form of input, such as clicking a mouse button,
+to initiate selection mode. With selection mode established and with the
+special picking matrix used, objects that are drawn near the cursor cause
+selection hits. Thus, during picking you're typically determining which
+objects are drawn near the cursor.
+<P>Picking is set up almost exactly like regular selection mode is, with
+the following major differences:
+<UL>Picking is usually triggered by an input device. In the following code
+examples, pressing the left mouse button invokes a function that performs
+picking.
+<BR>&nbsp;
+<P>You use the utility routine <B>gluPickMatrix()</B> to multiply a special
+projection matrix onto the current matrix. This routine should be called
+prior to multiplying a projection matrix onto the stack.</UL>
+Another, completely different way to perform picking is described in "Object
+Selection Using the Back Buffer." This technique uses color values to identify
+different components of an object. void <B>gluPickMatrix</B>(GLdouble <B>x</B>,
+GLdouble <B>y</B>, GLdouble <B>width</B>, GLdouble <B>height</B>, GLint
+<B>viewport[4]</B>);
+<P>Creates a projection matrix that restricts drawing to a small region
+of the viewport and multiplies that matrix onto the current matrix stack.
+The center of the picking region is (<B>x, y</B>) in window coordinates,
+typically the cursor location. <B>width</B> and <B>height</B> define the
+size of the picking region in screen coordinates. (You can think of the
+width and height as the sensitivity of the picking device.) <B>viewport[]</B>
+indicates the current viewport boundaries, which can be obtained by calling
+<PRE>glGetIntegerv(GL_VIEWPORT, GLint *viewport);</PRE>
+<B>Advanced</B>
+<P>The net result of the matrix created by <B>gluPickMatrix()</B> is to
+transform the clipping region into the unit cube -1 &amp;le; (<I>x</I>,
+<I>y</I>, <I>z</I>) &amp;le; 1 (or -<I>w</I> &amp;le; (<I>wx</I>, <I>wy</I>,
+<I>wz</I>) &amp;le; <I>w</I>). The picking matrix effectively performs
+an orthogonal transformation that maps a subregion of this unit cube to
+the unit cube. Since the transformation is arbitrary, you can make picking
+work for different sorts of regions - for example, for rotated rectangular
+portions of the window. In certain situations, you might find it easier
+to specify additional clipping planes to define the picking region.
+<P>Example 12-3 illustrates simple picking. It also demonstrates how to
+use multiple names to identify different components of a primitive, in
+this case the row and column of a selected object. A 3 × 3 grid of squares
+is drawn, with each square a different color. The board[3][3] array maintains
+the current amount of blue for each square. When the left mouse button
+is pressed, the <B>pickSquares()</B> routine is called to identify which
+squares were picked by the mouse. Two names identify each square in the
+grid - one identifies the row, and the other the column. Also, when the
+left mouse button is pressed, the color of all squares under the cursor
+position changes.
+<P><B>Example 12-3 : </B>A Picking Example: picksquare.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include "aux.h"
+
+int board[3][3];&nbsp;&nbsp;&nbsp;&nbsp; /*&nbsp; amount of color for each square */
+
+/* Clear color value for every square on the board */
+void myinit(void)
+{
+&nbsp;&nbsp;&nbsp; int i, j;
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; 3; i++)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (j = 0; j &lt; 3; j ++)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; board[i][j] = 0;
+&nbsp;&nbsp;&nbsp; glClearColor (0.0, 0.0, 0.0, 0.0);
+}
+
+void drawSquares(GLenum mode)
+{
+&nbsp;&nbsp;&nbsp; GLuint i, j;
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; 3; i++) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (mode == GL_SELECT)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glLoadName (i);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (j = 0; j &lt; 3; j ++) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (mode == GL_SELECT)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPushName (j);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glColor3f ((GLfloat) i/3.0, (GLfloat) j/3.0,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (GLfloat) board[i][j]/3.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glRecti (i, j, i+1, j+1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (mode == GL_SELECT)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPopName ();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; }
+}
+
+void processHits (GLint hits, GLuint buffer[])
+{
+&nbsp;&nbsp;&nbsp; unsigned int i, j;
+&nbsp;&nbsp;&nbsp; GLuint ii, jj, names, *ptr;
+
+&nbsp;&nbsp;&nbsp; printf ("hits = %d\n", hits);
+&nbsp;&nbsp;&nbsp; ptr = (GLuint *) buffer;
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; hits; i++) {&nbsp;&nbsp;&nbsp; /* for each hit */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; names = *ptr;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf (" number of names for this hit = %d\n", names);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("&nbsp; z1 is %u;", *ptr); ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf (" z2 is %u\n", *ptr); ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("&nbsp;&nbsp; names are ");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (j = 0; j &lt; names; j++) {&nbsp;&nbsp; /*&nbsp; for each name */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("%d ", *ptr);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (j == 0)&nbsp;&nbsp; /*&nbsp; set row and column&nbsp; */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ii = *ptr;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else if (j == 1)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; jj = *ptr;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; printf ("\n");
+&nbsp;&nbsp;&nbsp; board[ii][jj] = (board[ii][jj] + 1) % 3;
+&nbsp;&nbsp;&nbsp; }
+}
+
+#define BUFSIZE 512
+
+void pickSquares(AUX_EVENTREC *event)
+{
+&nbsp;&nbsp;&nbsp; GLuint selectBuf[BUFSIZE];
+&nbsp;&nbsp;&nbsp; GLint hits;
+&nbsp;&nbsp;&nbsp; GLint viewport[4];
+&nbsp;&nbsp;&nbsp; int x, y;
+
+&nbsp;&nbsp;&nbsp; x = event->data[AUX_MOUSEX];
+&nbsp;&nbsp;&nbsp; y = event->data[AUX_MOUSEY];
+&nbsp;&nbsp;&nbsp; glGetIntegerv (GL_VIEWPORT, viewport);
+
+&nbsp;&nbsp;&nbsp; glSelectBuffer (BUFSIZE, selectBuf);
+&nbsp;&nbsp;&nbsp; (void) glRenderMode (GL_SELECT);
+
+&nbsp;&nbsp;&nbsp; glInitNames();
+&nbsp;&nbsp;&nbsp; glPushName(-1);
+
+&nbsp;&nbsp;&nbsp; glMatrixMode (GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glPushMatrix ();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glLoadIdentity ();
+/* create 5x5 pixel picking region near cursor location */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; gluPickMatrix((GLdouble) x,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (GLdouble) (viewport[3] - y), 5.0, 5.0, viewport);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; gluOrtho2D (0.0, 3.0, 0.0, 3.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawSquares (GL_SELECT);
+&nbsp;&nbsp;&nbsp; glPopMatrix ();
+&nbsp;&nbsp;&nbsp; glFlush ();
+
+&nbsp;&nbsp;&nbsp; hits = glRenderMode (GL_RENDER);
+&nbsp;&nbsp;&nbsp; processHits (hits, selectBuf);
+}&nbsp;
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; drawSquares (GL_RENDER);
+&nbsp;&nbsp;&nbsp; glFlush();
+}
+
+void myReshape(GLsizei w, GLsizei h)
+{
+&nbsp;&nbsp;&nbsp; glViewport(0, 0, w, h);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glLoadIdentity();
+&nbsp;&nbsp;&nbsp; gluOrtho2D (0.0, 3.0, 0.0, 3.0);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_MODELVIEW);
+&nbsp;&nbsp;&nbsp; glLoadIdentity();
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode (AUX_SINGLE | AUX_RGBA);
+&nbsp;&nbsp;&nbsp; auxInitPosition (0, 0, 100, 100);
+&nbsp;&nbsp;&nbsp; auxInitWindow (argv[0]);
+&nbsp;&nbsp;&nbsp; myinit ();
+&nbsp;&nbsp;&nbsp; auxMouseFunc (AUX_LEFTBUTTON, AUX_MOUSEDOWN, pickSquares);
+&nbsp;&nbsp;&nbsp; auxReshapeFunc (myReshape);
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+
+<H4>
+Picking with Multiple Names and a Hierarchical Model</H4>
+Multiple names can also be used to choose parts of a hierarchical object
+in a scene. For example, if you were rendering an assembly line of automobiles,
+you might want the user to move the mouse to pick the third bolt on the
+left front tire of the third car in line. A different name can be used
+to identify each level of hierarchy: which car, which tire, and finally
+which bolt. As another example, one name can be used to describe a single
+molecule among other molecules, and additional names can differentiate
+individual atoms within that molecule.
+<P>Example 12-4 is a modification of Example 3-4 that draws an automobile
+with four identical wheels, each of which has five identical bolts. Code
+has been added to manipulate the name stack with the object hierarchy.
+<P><B>Example 12-4 : </B>Creating Multiple Names
+<PRE>draw_wheel_and_bolts()
+{
+&nbsp;&nbsp;&nbsp; long i;
+
+&nbsp;&nbsp;&nbsp; draw_wheel_body();
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; 5; i++) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPushMatrix();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glRotate(72.0*i, 0.0, 0.0, 1.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glTranslatef(3.0, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPushName(i);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; draw_bolt_body();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPopName();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPopMatrix();
+&nbsp;&nbsp;&nbsp; }
+&nbsp;}
+
+draw_body_and_wheel_and_bolts()
+{
+&nbsp;&nbsp;&nbsp; draw_car_body();
+&nbsp;&nbsp;&nbsp; glPushMatrix();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glTranslate(40, 0, 20);&nbsp; /* first wheel position*/
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPushName(1);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* name of wheel number 1 */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; draw_wheel_and_bolts();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPopName();
+&nbsp;&nbsp;&nbsp; glPopMatrix();
+&nbsp;&nbsp;&nbsp; glPushMatrix();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glTranslate(40, 0, -20); /* second wheel position */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPushName(2);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* name of wheel number 2 */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; draw_wheel_and_bolts();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPopName();
+&nbsp;&nbsp;&nbsp; glPopMatrix();
+
+&nbsp;&nbsp;&nbsp; /* draw last two wheels similarly */
+&nbsp;}</PRE>
+Example 12-5 uses the routines in Example 12-4 to draw three different
+cars, numbered 1, 2, and 3.
+<P><B>Example 12-5 : </B>Using Multiple Names
+<PRE>draw_three_cars()
+{
+&nbsp;&nbsp;&nbsp; glInitNames();
+&nbsp;&nbsp;&nbsp; glPushMatrix();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; translate_to_first_car_position();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPushName(1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; draw_body_and_wheel_and_bolts();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPopName();
+&nbsp;&nbsp;&nbsp; glPopMatrix();
+
+&nbsp;&nbsp;&nbsp; glPushMatrix();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; translate_to_second_car_position();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPushName(2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; draw_body_and_wheel_and_bolts();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPopName();
+&nbsp;&nbsp;&nbsp; glPopMatrix();
+
+&nbsp;&nbsp;&nbsp; glPushMatrix();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; translate_to_third_car_position();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPushName(3);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; draw_body_and_wheel_and_bolts();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPopName();
+&nbsp;&nbsp;&nbsp; glPopMatrix();
+}</PRE>
+Assuming that picking is performed, the following are some possible name-stack
+return values and their interpretations. In these examples, at most one
+hit record is returned; also, <B>d1</B> and <B>d2</B> are depth values.
+<P>empty The pick was outside all cars
+<P>2 <B>d1d2</B> 2 1 Car 2, wheel 1
+<P>1 <B>d1d2</B> 3 Car 3 body
+<P>3 <B>d1d2</B> 1 1 0 Bolt 0 on wheel 1 on car 1
+<P>The last interpretation assumes that the bolt and wheel don't occupy
+the same picking region. A user might well pick both the wheel and the
+bolt, yielding two hits. If you receive multiple hits, you have to decide
+which hit to process, perhaps by using the depth values to determine which
+picked object is closest to the viewpoint. The use of depth values is explored
+further in the next section.
+<H4>
+Picking and Depth Values</H4>
+Example 12-6 demonstrates how to use depth values when picking to determine
+which object is picked. This program draws three overlapping rectangles
+in normal rendering mode. When the left mouse button is pressed, the <B>pickRects()</B>
+routine is called. This routine returns the cursor position, enters selection
+mode, initializes the name stack, and multiplies the picking matrix onto
+the stack before the orthographic projection matrix. A selection hit occurs
+for each rectangle the cursor is over when the left mouse button is clicked.
+Finally, the contents of the selection buffer is examined to identify which
+named objects were within the picking region near the cursor.
+<P>The rectangles in this program are drawn at different depth, or <I>z</I>,
+values. Since only one name is used to identify all three rectangles, only
+one hit can be recorded. However, if more than one rectangle is picked,
+that single hit has different minimum and maximum <I>z</I> values.
+<P><B>Example 12-6 : </B>Picking with Depth Values: pickdepth.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include "aux.h"
+
+void myinit(void)
+{
+&nbsp;&nbsp;&nbsp; glClearColor (0.0, 0.0, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp; glDepthFunc(GL_LEQUAL);
+&nbsp;&nbsp;&nbsp; glEnable(GL_DEPTH_TEST);
+&nbsp;&nbsp;&nbsp; glShadeModel(GL_FLAT);
+&nbsp;&nbsp;&nbsp; glDepthRange (0.0, 1.0);&nbsp;&nbsp; /* The default z mapping */
+}
+
+void drawRects(GLenum mode)
+{
+&nbsp;&nbsp;&nbsp; if (mode == GL_SELECT)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glLoadName (1);
+&nbsp;&nbsp;&nbsp; glBegin (GL_QUADS);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glColor3f (1.0, 1.0, 0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (2, 0, 0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (2, 6, 0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (6, 6, 0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (6, 0, 0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glColor3f (0.0, 1.0, 1.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (3, 2, -1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (3, 8, -1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (8, 8, -1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (8, 2, -1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glColor3f (1.0, 0.0, 1.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (0, 2, -2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (0, 7, -2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (5, 7, -2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3i (5, 2, -2);
+&nbsp;&nbsp;&nbsp; glEnd ();
+}
+
+void processHits (GLint hits, GLuint buffer[])
+{
+&nbsp;&nbsp;&nbsp; unsigned int i, j;
+&nbsp;&nbsp;&nbsp; GLuint names, *ptr;
+
+&nbsp;&nbsp;&nbsp; printf ("hits = %d\n", hits);
+&nbsp;&nbsp;&nbsp; ptr = (GLuint *) buffer;
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; hits; i++) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* for each hit */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; names = *ptr;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf (" number of names for hit = %d\n", names);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("&nbsp; z1 is %u;", *ptr); ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf (" z2 is %u\n", *ptr); ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("&nbsp;&nbsp; the name is ");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (j = 0; j &lt; names; j++) {&nbsp;&nbsp;&nbsp; /* for each name */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("%d ", *ptr); ptr++;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("\n");
+&nbsp;&nbsp;&nbsp; }
+}
+
+#define BUFSIZE 512
+
+void pickRects(AUX_EVENTREC *event)
+{
+&nbsp;&nbsp;&nbsp; GLuint selectBuf[BUFSIZE];
+&nbsp;&nbsp;&nbsp; GLint hits;
+&nbsp;&nbsp;&nbsp; GLint viewport[4];
+&nbsp;&nbsp;&nbsp; int x, y;
+
+&nbsp;&nbsp;&nbsp; x = event->data[AUX_MOUSEX];
+&nbsp;&nbsp;&nbsp; y = event->data[AUX_MOUSEY];
+&nbsp;&nbsp;&nbsp; glGetIntegerv (GL_VIEWPORT, viewport);
+
+&nbsp;&nbsp;&nbsp; glSelectBuffer (BUFSIZE, selectBuf);
+&nbsp;&nbsp;&nbsp; (void) glRenderMode (GL_SELECT);
+
+&nbsp;&nbsp;&nbsp; glInitNames();
+&nbsp;&nbsp;&nbsp; glPushName(-1);
+
+&nbsp;&nbsp;&nbsp; glMatrixMode (GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glPushMatrix ();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glLoadIdentity ();
+/* create 5x5 pixel picking region near cursor location */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; gluPickMatrix ((GLdouble) x,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (GLdouble) (viewport[3] - y), 5.0, 5.0, viewport);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glOrtho (0.0, 8.0, 0.0, 8.0, 0.0, 2.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawRects (GL_SELECT);
+&nbsp;&nbsp;&nbsp; glPopMatrix ();
+&nbsp;&nbsp;&nbsp; glFlush ();
+
+&nbsp;&nbsp;&nbsp; hits = glRenderMode (GL_RENDER);
+&nbsp;&nbsp;&nbsp; processHits (hits, selectBuf);
+}&nbsp;
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; drawRects (GL_RENDER);
+&nbsp;&nbsp;&nbsp; glFlush();
+}
+
+void myReshape(GLsizei w, GLsizei h)
+{
+&nbsp;&nbsp;&nbsp; glViewport(0, 0, w, h);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glLoadIdentity();
+&nbsp;&nbsp;&nbsp; glOrtho (0.0, 8.0, 0.0, 8.0, 0.0, 2.0);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_MODELVIEW);
+&nbsp;&nbsp;&nbsp; glLoadIdentity();
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode (AUX_SINGLE | AUX_RGBA | AUX_DEPTH);
+&nbsp;&nbsp;&nbsp; auxInitPosition (0, 0, 100, 100);
+&nbsp;&nbsp;&nbsp; auxInitWindow (argv[0]);
+&nbsp;&nbsp;&nbsp; myinit ();
+&nbsp;&nbsp;&nbsp; auxMouseFunc (AUX_LEFTBUTTON, AUX_MOUSEDOWN, pickRects);
+&nbsp;&nbsp;&nbsp; auxReshapeFunc (myReshape);
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+
+<H4>
+Try This</H4>
+Try This
+<UL>Modify Example 12-6 to add additional calls to <B>glPushName()</B>
+so that multiple names are on the stack when the selection hit occurs.
+What will the contents of the selection buffer be?
+<BR>&nbsp;
+<P>By default, <B>glDepthRange()</B> sets the mapping of the <I>z</I> values
+to [0.0,1.0]. Try modifying the <B>glDepthRange()</B> values and see how
+it affects the <I>z</I> values that are returned in the selection array.</UL>
+
+<HR>
+<H3>
+Hints for Writing a Program That Uses Selection</H3>
+Most programs that allow a user to interactively edit some geometry provide
+a mechanism for the user to pick items or groups of items for editing.
+For two-dimensional drawing programs (for example, text editors, page-layout
+programs, circuit-design programs), it might be easier to do your own picking
+calculations instead of using the OpenGL picking mechanism. Often, it's
+easy to find bounding boxes for two-dimensional objects and to organize
+them in some hierarchical data structure to speed up searches. For example,
+OpenGL-style picking in a VLSI layout program that has millions of rectangles
+can be relatively slow. However, using simple bounding-box information
+when rectangles are typically aligned with the screen could make picking
+in such a program extremely fast. The code is probably simpler to write,
+too.
+<P>As another example, since only geometric objects cause hits, you might
+want to create your own method for picking text. Setting the current raster
+position is a geometric operation, but it effectively creates only a single
+pickable point at the current raster position, which is typically at the
+lower left-hand corner of the text. If your editor needs to manipulate
+individual characters within a text string, some other picking mechanism
+must be used. You could draw little rectangles around each character during
+picking mode, but it's almost certainly easier to handle text as a special
+case.
+<P>If you decide to use OpenGL picking, organize your program and its data
+structures so that it's easy to draw appropriate lists of objects in either
+selection or normal drawing mode. This way, when the user picks something,
+you can use the same data structures for the pick operation that you use
+to display the items on the screen. Also, consider whether you want to
+allow the user to select multiple objects. One way to do this is to store
+a bit for each item indicating whether it's selected, but with this method,
+you have to traverse your entire list of items to find the selected items.
+You might find it useful to maintain a list of pointers to selected items
+to speed up this search. It's probably a good idea to keep the selection
+bit for each item as well, since when you're drawing the entire picture,
+you might want to draw selected items differently (for example, in a different
+color or with a selection box around them). Finally, consider the selection
+user interface. You might want to allow the user to do the following:
+<UL>Select an item
+<BR>&nbsp;
+<P>Sweep-select a group of items (see the next paragraphs for a description
+of this behavior)
+<BR>&nbsp;
+<P>Add an item to the selection
+<BR>&nbsp;
+<P>Add a sweep selection to the current selections
+<BR>&nbsp;
+<P>Delete an item from a selection
+<BR>&nbsp;
+<P>Choose a single item from a group of overlapping items</UL>
+A typical solution for a two-dimensional drawing program might work as
+follows.
+<OL>All selection is done by pointing with the mouse cursor and using the
+left mouse button. In what follows, <I>cursor</I> means the cursor tied
+to the mouse, and <I>button</I> means the left mouse button.
+<BR>&nbsp;
+<P>Clicking on an item selects it and deselects all other currently selected
+items. If the cursor is on top of multiple items, the smallest is selected.
+(In three dimensions, many other strategies work to disambiguate a selection.)
+<BR>&nbsp;
+<P>Clicking down where there is no item, holding the button down while
+dragging the cursor, and then releasing the button selects all the items
+in a screen-aligned rectangle whose corners are determined by the cursor
+positions when the button went down and where it came up. This is called
+a <I>sweep selection</I>. All items not in the swept-out region are deselected.
+(You must decide whether an item is selected only if it's completely within
+the sweep region, or if any part of it falls within the region. The completely
+within strategy usually works best.)
+<BR>&nbsp;
+<P>If the Shift key is held down and the user clicks on an item that isn't
+currently selected, that item is added to the selected list. If the clicked-upon
+item is selected, it's deleted from the selection list.
+<BR>&nbsp;
+<P>If a sweep selection is performed with the Shift key pressed, the items
+swept out are added to the current selection.
+<BR>&nbsp;
+<P>In an extremely cluttered region, it's often hard to do a sweep selection.
+When the button goes down, the cursor might lie on top of some item, and
+normally, that item would be selected. You can make any operation a sweep
+selection, but a typical user interface interprets a button-down on an
+item plus a mouse motion as a select-plus-drag operation. To solve this
+problem, you can have an enforced sweep selection by holding down, say,
+the Alt key. With this, the following set of operations constitutes a sweep
+selection: Alt-button down, sweep, button up. Items under the cursor when
+the button goes down are ignored.
+<BR>&nbsp;
+<P>If the Shift key is held during this sweep selection, the items enclosed
+in the sweep region are added to the current selection.
+<BR>&nbsp;
+<P>Finally, if the user clicks on multiple items, select just one of them.
+If the cursor isn't moved (or maybe not moved more than a pixel), and the
+user clicks again in the same place, deselect the item originally selected,
+and select a different item under the cursor. Use repeated clicks at the
+same point to cycle through all the possibilities.</OL>
+Different rules can apply in particular situations. In a text editor, you
+probably don't have to worry about characters on top of each other, and
+selections of multiple characters are always contiguous characters in the
+document. Thus, you need to mark only the first and last selected characters
+to identify the complete selection. With text, often the best way to handle
+selection is to identify the positions between characters rather than the
+characters themselves. This allows you to have an empty selection when
+the beginning and end of the selection are between the same pair of characters,
+and to put the cursor before the first character in the document or after
+the final one with no special-case code.
+<P>In three-dimensional editors, you might provide ways to rotate and zoom
+between selections, so sophisticated schemes for cycling through the possible
+selections might be unnecessary. On the other hand, selection in three
+dimensions is difficult because the cursor's position on the screen usually
+gives no indication of its depth.
+<P>
+<HR>
+<H2>
+Feedback</H2>
+Feedback is similar to selection in that once you're in either mode, no
+pixels are produced and the screen is frozen. Instead of drawing occurring,
+information about primitives that would have been rendered is sent back
+to the application. The key difference between selection and feedback modes
+is what information is sent back. In selection mode, assigned names are
+returned to an array of integer values. In feedback mode, information about
+transformed primitives is sent back to an array of floating-point values.
+The values sent back to the feedback array consist of tokens that specify
+what type of primitive (point, line, polygon, image, or bitmap) has been
+processed and transformed, followed by vertex, color, or other data for
+that primitive. The values returned are fully transformed by lighting and
+viewing operations. Feedback mode is initiated by calling <B>glRenderMode()</B>
+with GL_FEEDBACK as the argument.
+<P>Here's how you enter and exit feedback mode:
+<OL>Call <B>glFeedbackBuffer()</B> to specify the array to hold the feedback
+information. The arguments to this command describe what type of data and
+how much of it gets written into the array.
+<BR>&nbsp;
+<P>Call <B>glRenderMode()</B> with GL_FEEDBACK as the argument to enter
+feedback mode. (You can ignore the value returned by <B>glRenderMode()</B>.)
+After this point, until you exit feedback mode, primitives aren't rasterized
+to produce pixels, and the contents of the framebuffer don't change.
+<BR>&nbsp;
+<P>Draw your primitives. As you issue drawing commands, you can make several
+calls to <B>glPassThrough() </B>to insert markers into the returned feedback
+data to help you parse it more easily.
+<BR>&nbsp;
+<P>Exit feedback mode by calling <B>glRenderMode()</B>, with GL_RENDER
+as the argument if you want to return to normal drawing mode. The integer
+value returned by <B>glRenderMode()</B> is the number of values stored
+in the feedback array.
+<BR>&nbsp;
+<P>Parse the data in the feedback array.</OL>
+void <B>glFeedbackBuffer</B>(GLsizei <B>size</B>, GLenum <B>type</B>, GLfloat
+*<B>buffer</B>);
+<P>Establishes a buffer for the feedback data: <B>buffer</B> is a pointer
+to an array where the data is stored. The <B>size</B> argument indicates
+the maximum number of values that can be stored in the array. The <B>type</B>
+argument describes the information fed back for each vertex in the feedback
+array; its possible values and their meaning are shown in Table 12-1 .
+<B>glFeedbackBuffer()</B> must be called before feedback mode is entered.
+In the table,<I> k</I> is 1 in color-index mode and 4 in RGBA mode.
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 12-1 : </B>Values for the Type Argument to
+glFeedbackBuffer()</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Type Argument</TH>
+
+<TH>Coordinates</TH>
+
+<TH>Color</TH>
+
+<TH>Texture</TH>
+
+<TH>Total Values</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_2D</TD>
+
+<TD>x, y</TD>
+
+<TD>-</TD>
+
+<TD>-</TD>
+
+<TD>2</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_3D</TD>
+
+<TD>x, y, z</TD>
+
+<TD>-</TD>
+
+<TD>-</TD>
+
+<TD>3</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_3D_COLOR</TD>
+
+<TD>x, y, z</TD>
+
+<TD>k</TD>
+
+<TD>-</TD>
+
+<TD>3 + k</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_3D_COLOR_TEXTURE</TD>
+
+<TD>x, y, z</TD>
+
+<TD>k</TD>
+
+<TD>4</TD>
+
+<TD>7 + k</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_4D_COLOR_TEXTURE</TD>
+
+<TD>x, y, z, w</TD>
+
+<TD>k</TD>
+
+<TD>4</TD>
+
+<TD>8 + k</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+The Feedback Array</H3>
+In feedback mode, each primitive that would be rasterized (or each call
+to <B>glDrawPixels()</B> or <B>glCopyPixels()</B>, if the raster position
+is valid) generates a block of values that's copied into the feedback array.
+The number of values is determined by the <B>type</B> argument to <B>glFeedbackBuffer()</B>,
+as listed in Table 12-1 . Use the appropriate value for the type of primitives
+you're drawing: GL_2D or GL_3D for unlit two- or three-dimensional primitives,
+GL_3D_COLOR for lit, three-dimensional primitives, and GL_3D_COLOR_TEXTURE
+or GL_4D_COLOR_TEXTURE for lit, textured, three- or four-dimensional primitives.
+<P>Each block of feedback values begins with a code indicating the primitive
+type, followed by values that describe the primitive's vertices and associated
+data. Entries are also written for pixel rectangles. In addition, pass-through
+markers that you've explicitly created can be returned in the array; the
+next section explains these markers in more detail. Table 12-2 shows the
+syntax for the feedback array; remember that the data associated with each
+returned vertex is as described in Table 12-1 . Note that a polygon can
+have <B>n</B> vertices returned. Also, the <I>x, y, z</I> coordinates returned
+by feedback are window coordinates; if <I>w</I> is returned, it's in clip
+coordinates. For bitmaps and pixel rectangles, the coordinates returned
+are those of the current raster position. In the table, note that GL_LINE_RESET_TOKEN
+is returned only when the line stipple is reset for that line segment.
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 12-2 : </B>Feedback Array Syntax</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Primitive Type</TH>
+
+<TH>Code</TH>
+
+<TH>Associated Data</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>Point</TD>
+
+<TD>GL_POINT_TOKEN</TD>
+
+<TD>vertex</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>Line</TD>
+
+<TD>GL_LINE_TOKEN or GL_LINE_RESET_TOKEN</TD>
+
+<TD>vertex vertex</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>Polygon</TD>
+
+<TD>GL_POLYGON_TOKEN</TD>
+
+<TD>n vertex vertex ... vertex</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>Bitmap</TD>
+
+<TD>GL_BITMAP_TOKEN</TD>
+
+<TD>vertex</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>Pixel Rectangle</TD>
+
+<TD>GL_DRAW_PIXEL_TOKEN or GL_COPY_PIXEL_TOKEN</TD>
+
+<TD>vertex&nbsp;</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>Pass-through</TD>
+
+<TD>GL_PASS_THROUGH_TOKE N</TD>
+
+<TD>a floating-point number</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>
+<HR>
+<H3>
+Using Markers in Feedback Mode</H3>
+Feedback occurs after transformations, lighting, polygon culling, and interpretation
+of polygons by <B>glPolygonMode()</B>. It might also occur after polygons
+with more than three edges are broken up into triangles (if your particular
+OpenGL implementation renders polygons by performing this decomposition).
+Thus, it might be hard for you to recognize the primitives you drew in
+the feedback data you receive. To help yourself parse the feedback data,
+call <B>glPassThrough()</B> as needed in your sequence of drawing commands
+to insert a marker. You might use the markers to separate the feedback
+values returned from different primitives, for example. This command causes
+GL_PASS_THROUGH_TOKEN to be written into the feedback array, followed by
+the floating-point value you pass in as an argument. void <B>glPassThrough</B>(GLfloat
+<B>token</B>);
+<P>Inserts a marker into the stream of values written into the feedback
+array, if called in feedback mode. The marker consists of the code GL_PASS_THROUGH_TOKEN
+followed by a single floating-point value, <B>token</B>. This command has
+no effect when called outside of feedback mode. Calling <B>glPassThrough()</B>
+between <B>glBegin()</B> and <B>glEnd()</B> generates a GL_INVALID_OPERATION
+error.
+<P>
+<HR>
+<H3>
+A Feedback Example</H3>
+Example 12-7 demonstrates the use of feedback mode. This program draws
+a lit, three-dimensional scene in normal rendering mode. Then, feedback
+mode is entered, and the scene is redrawn. Since the program draws lit,
+untextured, three-dimensional objects, the type of feedback data is GL_3D_COLOR.
+Since RGBA mode is used, each unclipped vertex generates seven values for
+the feedback buffer: <B>x, y, z, r, g, b,</B> and <B>a</B>.
+<P>In feedback mode, the program draws two lines as part of a line strip
+and then inserts a pass-through marker. Next, a point is drawn at (-100.0,
+-100.0, -100.0), which falls outside the orthographic viewing volume and
+thus doesn't put any values into the feedback array. Finally, another pass-through
+marker is inserted, and another point is drawn.
+<P><B>Example 12-7 : </B>Using Feedback Mode: feedback.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include "aux.h"
+
+void myinit(void)
+{
+&nbsp;&nbsp;&nbsp; glEnable(GL_LIGHTING);
+&nbsp;&nbsp;&nbsp; glEnable(GL_LIGHT0);
+}
+
+void drawGeometry (GLenum mode)
+{
+&nbsp;&nbsp;&nbsp; glBegin (GL_LINE_STRIP);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3f (0.0, 0.0, 1.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (30.0, 30.0, 0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (50.0, 60.0, 0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (70.0, 40.0, 0.0);
+&nbsp;&nbsp;&nbsp; glEnd ();
+&nbsp;&nbsp;&nbsp; if (mode == GL_FEEDBACK)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPassThrough (1.0);
+
+&nbsp;&nbsp;&nbsp; glBegin (GL_POINTS);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (-100.0, -100.0, -100.0);&nbsp;
+&nbsp;&nbsp;&nbsp; glEnd ();
+&nbsp;&nbsp;&nbsp; if (mode == GL_FEEDBACK)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glPassThrough (2.0);
+
+&nbsp;&nbsp;&nbsp; glBegin (GL_POINTS);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3f (0.0, 0.0, 1.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3f (50.0, 50.0, 0.0);
+&nbsp;&nbsp;&nbsp; glEnd ();
+}
+
+void print3DcolorVertex (GLint size, GLint *count,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GLfloat *buffer)
+{
+&nbsp;&nbsp;&nbsp; int i;
+
+&nbsp;&nbsp;&nbsp; printf ("&nbsp; ");
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; 7; i++) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("%4.2f ", buffer[size-(*count)]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *count = *count - 1;
+&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; printf ("\n");
+}
+
+void printBuffer(GLint size, GLfloat *buffer)
+{
+&nbsp;&nbsp;&nbsp; GLint count;
+&nbsp;&nbsp;&nbsp; GLfloat token;
+
+&nbsp;&nbsp;&nbsp; count = size;
+&nbsp;&nbsp;&nbsp; while (count) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; token = buffer[size-count]; count--;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (token == GL_PASS_THROUGH_TOKEN) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("GL_PASS_THROUGH_TOKEN\n");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("&nbsp; %4.2f\n", buffer[size-count]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; count--;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else if (token == GL_POINT_TOKEN) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("GL_POINT_TOKEN\n");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; print3DcolorVertex (size, &amp;count, buffer);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else if (token == GL_LINE_TOKEN) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("GL_LINE_TOKEN\n");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; print3DcolorVertex (size, &amp;count, buffer);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; print3DcolorVertex (size, &amp;count, buffer);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else if (token == GL_LINE_RESET_TOKEN) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf ("GL_LINE_RESET_TOKEN\n");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; print3DcolorVertex (size, &amp;count, buffer);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; print3DcolorVertex (size, &amp;count, buffer);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; }
+}
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; GLfloat feedBuffer[1024];
+&nbsp;&nbsp;&nbsp; GLint size;
+
+&nbsp;&nbsp;&nbsp; glMatrixMode (GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glLoadIdentity ();
+&nbsp;&nbsp;&nbsp; glOrtho (0.0, 100.0, 0.0, 100.0, 0.0, 1.0);
+
+&nbsp;&nbsp;&nbsp; glClearColor (0.0, 0.0, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; drawGeometry (GL_RENDER);
+
+&nbsp;&nbsp;&nbsp; glFeedbackBuffer (1024, GL_3D_COLOR, feedBuffer);
+&nbsp;&nbsp;&nbsp; (void) glRenderMode (GL_FEEDBACK);
+&nbsp;&nbsp;&nbsp; drawGeometry (GL_FEEDBACK);
+
+&nbsp;&nbsp;&nbsp; size = glRenderMode (GL_RENDER);
+&nbsp;&nbsp;&nbsp; printBuffer (size, feedBuffer);
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode (AUX_SINGLE | AUX_RGBA);
+&nbsp;&nbsp;&nbsp; auxInitPosition (0, 0, 100, 100);
+&nbsp;&nbsp;&nbsp; auxInitWindow (argv[0]);
+&nbsp;&nbsp;&nbsp; myinit ();
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+Running this program generates the following output:
+<PRE>GL_LINE_RESET_TOKEN
+&nbsp;30.00 30.00 0.00 0.84 0.84 0.84 1.00
+&nbsp;50.00 60.00 0.00 0.84 0.84 0.84 1.00
+GL_LINE_TOKEN
+&nbsp;50.00 60.00 0.00 0.84 0.84 0.84 1.00
+&nbsp;70.00 40.00 0.00 0.84 0.84 0.84 1.00
+GL_PASS_THROUGH_TOKEN
+&nbsp;1.00
+GL_PASS_THROUGH_TOKEN
+&nbsp;2.00
+GL_POINT_TOKEN
+&nbsp;50.00 50.00 0.00 0.84 0.84 0.84 1.00</PRE>
+Thus, the line strip drawn with these commands results in two primitives:
+<PRE>glBegin(GL_LINE_STRIP);
+&nbsp;&nbsp;&nbsp; glNormal3f (0.0, 0.0, 1.0);
+&nbsp;&nbsp;&nbsp; glVertex3f (30.0, 30.0, 0.0);
+&nbsp;&nbsp;&nbsp; glVertex3f (50.0, 60.0, 0.0);
+&nbsp;&nbsp;&nbsp; glVertex3f (70.0, 40.0, 0.0);
+glEnd();</PRE>
+The first primitive begins with GL_LINE_RESET_TOKEN, which indicates that
+the primitive is a line segment and that the line stipple is reset. The
+second primitive begins with GL_LINE_TOKEN, so it's also a line segment,
+but the line stipple isn't reset and hence continues from where the previous
+line segment left off. Each of the two vertices for these lines generates
+seven values for the feedback array. Note that the RGBA values for all
+four vertices in these two lines are (0.84, 0.84, 0.84, 1.0), which is
+a very light gray color with the maximum alpha value. These color values
+are a result of the interaction of the surface normal and lighting parameters.
+<P>Since no feedback data is generated between the first and second pass-through
+markers, you can deduce that any primitives drawn between the first two
+calls to <B>glPassThrough()</B> were clipped out of the viewing volume.
+Finally, the point at (50.0, 50.0, 0.0) is drawn, and its associated data
+is copied into the feedback array.
+<H4>
+Try This</H4>
+Try This
+<P>Make changes to Example 12-7 and see how they affect the feedback values
+that are returned. For example, change the coordinate values of <B>glOrtho()</B>.
+Change the lighting variables, or eliminate lighting altogether and change
+the feedback type to GL_3D. Or add more primitives to see what other geometry
+(such as filled polygons) contributes to the feedback array.
+<P>
+<HR><A HREF="chapter11.html">[Previous chapter]</A> <A HREF="chapter13.html">[Next
+chapter]
+<HR></A>See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>

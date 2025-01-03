@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Appendix E - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<HR>
+<H1>
+Appendix E<BR>
+The OpenGL Programming Guide Auxiliary Library</H1>
+This appendix describes the auxiliary library that was written using OpenGL
+for this guide. It has the following major sections:
+<UL>"Initializing and Exiting a Window"
+<BR>&nbsp;
+<P>"Handling Window and Input Events"
+<BR>&nbsp;
+<P>"Loading the Color Map"
+<BR>&nbsp;
+<P>"Initializing and Drawing Three-Dimensional Objects"
+<BR>&nbsp;
+<P>"Managing a Background Process"
+<BR>&nbsp;
+<P>"Running the Program"</UL>
+See "How to Obtain the Sample Code" for information about how to obtain
+the source code for the auxiliary library.
+<P>With the auxiliary library, your application structures its event handling
+to use callback functions. (This method is similar to using the Xt Toolkit,
+also known as the X Intrinsics, with a widget set.) For example, first
+you open a window and register callback routines for specific events. Then
+you create a main loop without an exit. In that loop, if an event occurs,
+its registered callback functions are executed. Upon completion of the
+callback functions, flow of control is returned to the main loop.
+<P>
+<HR>
+<H2>
+<A NAME="X"></A>Initializing and Exiting a Window</H2>
+Before you can open a window, you must specify its characteristics: Should
+it be single-buffered or double-buffered? Should it store colors as RGBA
+values or as color indices? Where should it appear on your display? To
+specify the answers to these questions, call <B>auxInitDisplayMode()</B>
+and <B>auxInitPosition() </B>before you call <B>auxInitWindow()</B> to
+open the window. void <B>auxInitWindow</B>(GLbyte *<B>titleString</B>);
+<P>Opens a window with the characteristics specified by <B>auxInitDisplayMode()</B>
+and <B>auxInitPosition()</B>. The string <B>titleString</B> appears in
+the title bar, if your window system does that sort of thing. The Escape
+key is bound to an exiting function that kills the window, exits the program,
+and generally cleans up. Also, the default color for the background is
+set to black for an RGBA window and to color index 0 for a color-index
+window.
+<P>void <B>auxInitDisplayMode</B>(GLbitfield <B>mask</B>);
+<P>Tells <B>auxInitWindow()</B> whether to create an RGBA or color-index
+window, or a single- or double-buffered window. You can also specify that
+the window have an associated depth, stencil, and/or accumulation buffer.
+The <B>mask</B> argument is a bitwise ORed combination of AUX_RGBA or AUX_INDEX,
+AUX_SINGLE or AUX_DOUBLE, and any of the buffer-enabling flags: AUX_DEPTH,
+AUX_STENCIL, or AUX_ACCUM. For example, for a double-buffered, RGBA-mode
+window with a depth and stencil buffer, use AUX_DOUBLE | AUX_RGBA | AUX_DEPTH
+| AUX_STENCIL. The default value is AUX_INDEX | AUX_SINGLE, or a color-index,
+single-buffered window.
+<P>void <B>auxInitPosition</B>(GLint <B>x</B>, GLint <B>y</B>, GLsizei
+<B>width</B>, GLsizei <B>height</B>);
+<P>Tells <B>auxInitWindow()</B> where to position a window on the screen.
+The arguments (<B>x, y</B>) indicate the location of the lower left corner
+of the window, and <B>width</B> and <B>height</B> indicate the window's
+size (in pixels). The default values are (0, 0) for (<B>x, y</B>) and (100,
+100) for <B>(width, height</B>).
+<P>
+<HR>
+<H2>
+Handling Window and Input Events</H2>
+After the window is created, but before you enter the main loop, you should
+register callback functions using the following three routines. void <B>auxReshapeFunc</B>(void
+(*<B>function</B>)(GLsizei, GLsizei));
+<P>Specifies the function that's called whenever the window is resized,
+moved, or exposed. The argument <B>function</B> is a pointer to a function
+that expects two arguments, the new width and height of the window. Typically,
+<B>function</B> calls <B>glViewport()</B>, so that the display is clipped
+to the new size, and it redefines the projection matrix so that the aspect
+ratio of the projected image matches the viewport, avoiding aspect ratio
+distortion. If you don't call <B>auxReshapeFunc()</B>, a default reshape
+function is called, which assumes a two-dimensional orthographic projection.
+With this auxiliary library, the window is automatically redrawn after
+every reshaping event.
+<P>void <B>auxKeyFunc</B>(GLint <B>key</B>, void (*<B>function</B>)(void))
+;
+<P>Specifies the function, <B>function</B>, that's called when the keyboard
+key indicated by <B>key</B> is pressed. Use one of the defined auxiliary
+library constants for <B>key</B>: AUX_A through AUX_Z, AUX_a through AUX_z,
+AUX_0 through AUX_9, AUX_LEFT, AUX_RIGHT, AUX_UP, AUX_DOWN (the arrow keys),
+AUX_ESCAPE, AUX_SPACE, or AUX_RETURN. With this auxiliary library, the
+window is automatically redrawn after every processed key event, although
+in a real application, you might wait for several events to be completed
+before drawing.
+<P>void <B>auxMouseFunc</B>(GLint <B>button</B>, GLint <B>mode</B>,
+<BR>void (*<B>function</B>)(AUX_EVENTREC *));
+<P>Specifies the function, <B>function</B>, that's called when the mouse
+button indicated by <B>button</B> enters the mode defined by <B>mode</B>.
+The <B>button</B> argument can be AUX_LEFTBUTTON, AUX_MIDDLEBUTTON, or
+AUX_RIGHTBUTTON (assuming a right-handed setup). The <B>mode</B> argument
+indicates whether the button is clicked, AUX_MOUSEDOWN, or released, AUX_MOUSEUP.
+The <B>function</B> argument must take one argument, which is a pointer
+to a structure of type AUX_EVENTREC. The <B>auxMouseFunc()</B> routine
+allocates memory for the structure. For example, to determine the pointer
+coordinates at the time of the event, you might define <B>function</B>
+like this:
+<PRE>void function(AUX_EVENTREC *event)
+{ GLint x, y;&nbsp;
+&nbsp;&nbsp;&nbsp; x = event->data[AUX_MOUSEX];&nbsp;
+&nbsp;&nbsp;&nbsp; y = event->data[AUX_MOUSEY];&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp; ...&nbsp;&nbsp;
+}</PRE>
+
+<HR>
+<H2>
+Loading the Color Map</H2>
+If you're using color-index mode, you might be surprised to discover there's
+no OpenGL routine to load a color into a color lookup table. This is because
+the process of loading a color map depends entirely on the window system.
+The auxiliary library provides a generalized routine to load a single color
+index with an RGB value, <B>auxSetOneColor()</B>. You need to implement
+this routine for your particular system. void <B>auxSetOneColor</B>(GLint
+<B>index</B>, GLfloat <B>red</B>, GLfloat <B>green</B>, GLfloat <B>blue</B>);
+<P>Loads the index in the color map, <B>index</B>, with the given <B>red</B>,
+<B>green</B>, and <B>blue</B> values. These values are normalized to lie
+in the range [0.0,1.0].
+<P>
+<HR>
+<H2>
+Initializing and Drawing Three-Dimensional Objects</H2>
+Many sample programs in this guide use three-dimensional models to illustrate
+various rendering properties. The following drawing routines are included
+in the auxiliary library to avoid having to reproduce the code to draw
+these models in each program. Each three-dimensional model comes in two
+flavors: wireframe without surface normals, and solid with shading and
+surface normals. Use the solid version when you're applying lighting. The
+argument for these routines allows you to scale the object that's drawn.
+void <B>auxWireSphere</B>(GLdouble <B>radius</B>);
+<BR>void <B>auxSolidSphere</B>(GLdouble <B>radius</B>);
+<P>void <B>auxWireCube</B>(GLdouble <B>size</B>);
+<BR>void <B>auxSolidCube</B>(GLdouble <B>size</B>);
+<P>void <B>auxWireBox</B>(GLdouble <B>width</B>, GLdouble <B>height</B>,
+GLdouble <B>depth</B>);
+<BR>void <B>auxSolidBox</B>(GLdouble <B>width</B>, GLdouble <B>height</B>,
+GLdouble <B>depth</B>);
+<P>void <B>auxWireTorus</B>(GLdouble <B>innerRadius</B>, GLdouble <B>outerRadius</B>);
+<BR>void <B>auxSolidTorus</B>(GLdouble <B>innerRadius</B>, GLdouble <B>outerRadius</B>);
+<P>void <B>auxWireCylinder</B>(GLdouble <B>radius</B>, GLdouble <B>height</B>);
+<BR>void <B>auxSolidCylinder</B>(GLdouble <B>radius</B>, GLdouble <B>height</B>);
+<P>void <B>auxWireIcosahedron</B>(GLdouble <B>radius</B>);
+<BR>void <B>auxSolidIcosahedron</B>(GLdouble <B>radius</B>);
+<P>void <B>auxWireOctahedron</B>(GLdouble <B>radius</B>);
+<BR>void <B>auxSolidOctahedron</B>(GLdouble <B>radius</B>);
+<P>void <B>auxWireTetrahedron</B>(GLdouble <B>radius</B>);
+<BR>void <B>auxSolidTetrahedron</B>(GLdouble <B>radius</B>);
+<P>void <B>auxWireDodecahedron</B>(GLdouble <B>radius</B>);
+<BR>void <B>auxSolidDodecahedron</B>(GLdouble <B>radius</B>);
+<P>void <B>auxWireCone</B>(GLdouble <B>radius</B>, GLdouble <B>height</B>);
+<BR>void <B>auxSolidCone</B>(GLdouble <B>radius</B>, GLdouble <B>height</B>);
+<P>void <B>auxWireTeapot</B>(GLdouble <B>size</B>);
+<BR>void <B>auxSolidTeapot</B>(GLdouble <B>size</B>);
+<P>Draws the specified wireframe or solid object. These routines are self-initializing;
+that is, the first time a rendering request is made, a display list is
+created for the object. Every subsequent time the routine is called, the
+same display list is executed. All these models are drawn centered at the
+origin. When drawn with unit scale factors, these models fit into a box
+with all coordinates from -1 to 1. Use the arguments for these routines
+to scale the objects.
+<P>
+<HR>
+<H2>
+Managing a Background Process</H2>
+You can specify a function that's to be executed if no other events are
+pending - for example, when the event loop would otherwise be idle - with
+<B>auxIdleFunc()</B>. This routine takes a pointer to the function as its
+only argument. Pass in zero to disable the execution of the function. void
+<B>auxIdleFunc</B>(void *<B>func</B>);
+<P>Specifies the function, <B>func</B>, to be executed if no other events
+are pending. If zero is passed in, execution of <B>func</B> is disabled.
+<P>
+<HR>
+<H2>
+Running the Program</H2>
+The examples in the book typically draw the scene each time the window
+is created, moved, or reshaped, or if some input event occurs. Use <B>auxMainLoop()</B>
+to specify the routine that draws the scene. void <B>auxMainLoop</B>(void(*<B>displayFunc</B>)(void));
+<P>Specifies the function, <B>displayFunc</B>, that's called when the window
+needs to be updated. <B>displayFunc</B> should redraw the objects in your
+scene.
+<P>
+<HR><A HREF="appendixd.html">[Previous chapter]</A> <A HREF="appendixf.html">[Next
+chapter]
+<HR></A>See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>

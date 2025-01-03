@@ -1,0 +1,779 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Chapter 1 - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<HR>
+<H1>
+Chapter 1<BR>
+Introduction to OpenGL</H1>
+<B>Chapter Objectives</B>
+<P>After reading this chapter, you'll be able to do the following:
+<UL>Appreciate in general terms what OpenGL offers
+<BR>&nbsp;
+<P>Identify different levels of rendering complexity
+<BR>&nbsp;
+<P>Understand the basic structure of an OpenGL program
+<BR>&nbsp;
+<P>Recognize OpenGL command syntax
+<BR>&nbsp;
+<P>Understand in general terms how to animate an OpenGL program</UL>
+This chapter introduces OpenGL. It has the following major sections:
+<UL>"What Is OpenGL?" explains what OpenGL is, what it does and doesn't
+do, and how it works.
+<BR>&nbsp;
+<P>"A Very Simple OpenGL Program" presents a small OpenGL program and briefly
+discusses it. This section also defines a few basic computer-graphics terms.
+<BR>&nbsp;
+<P>"OpenGL Command Syntax" explains some of the conventions and notations
+used by OpenGL commands.
+<BR>&nbsp;
+<P>"OpenGL as a State Machine" describes the use of state variables in
+OpenGL and the commands for querying, enabling, and disabling states.
+<BR>&nbsp;
+<P>"OpenGL-related Libraries" describes sets of OpenGL-related routines,
+including an auxiliary library specifically written for this book to simplify
+programming examples.
+<BR>&nbsp;
+<P>"Animation" explains in general terms how to create pictures on the
+screen that move, or animate.</UL>
+
+<HR>
+<BR>&nbsp;
+<H2>
+What Is OpenGL?</H2>
+OpenGL is a software interface to graphics hardware. This interface consists
+of about 120 distinct commands, which you use to specify the objects and
+operations needed to produce interactive three-dimensional applications.
+<P>OpenGL is designed to work efficiently even if the computer that displays
+the graphics you create isn't the computer that runs your graphics program.
+This might be the case if you work in a networked computer environment
+where many computers are connected to one another by wires capable of carrying
+digital data. In this situation, the computer on which your program runs
+and issues OpenGL drawing commands is called the client, and the computer
+that receives those commands and performs the drawing is called the server.
+The format for transmitting OpenGL commands (called the <I>protocol</I>)
+from the client to the server is always the same, so OpenGL programs can
+work across a network even if the client and server are different kinds
+of computers. If an OpenGL program isn't running across a network, then
+there's only one computer, and it is both the client and the server.
+<P>OpenGL is designed as a streamlined, hardware-independent interface
+to be implemented on many different hardware platforms. To achieve these
+qualities, no commands for performing windowing tasks or obtaining user
+input are included in OpenGL; instead, you must work through whatever windowing
+system controls the particular hardware you're using. Similarly, OpenGL
+doesn't provide high-level commands for describing models of three-dimensional
+objects. Such commands might allow you to specify relatively complicated
+shapes such as automobiles, parts of the body, airplanes, or molecules.
+With OpenGL, you must build up your desired model from a small set of geometric
+primitive - points, lines, and polygons. (A sophisticated library that
+provides these features could certainly be built on top of OpenGL - in
+fact, that's what Open Inventor is. See "OpenGL-related Libraries" for
+more information about Open Inventor.)
+<P>Now that you know what OpenGL <I>doesn't</I> do, here's what it <I>does</I>
+do. Take a look at the color plates - they illustrate typical uses of OpenGL.
+They show the scene on the cover of this book, drawn by a computer (which
+is to say, <I>rendered</I>) in successively more complicated ways. The
+following paragraphs describe in general terms how these pictures were
+made.
+<UL>Figure J-1 shows the entire scene displayed as a wireframe model -
+that is, as if all the objects in the scene were made of wire. Each line
+of wire corresponds to an edge of a primitive (typically a polygon). For
+example, the surface of the table is constructed from triangular polygons
+that are positioned like slices of pie.
+<P>Note that you can see portions of objects that would be obscured if
+the objects were solid rather than wireframe. For example, you can see
+the entire model of the hills outside the window even though most of this
+model is normally hidden by the wall of the room. The globe appears to
+be nearly solid because it's composed of hundreds of colored blocks, and
+you see the wireframe lines for all the edges of all the blocks, even those
+forming the back side of the globe. The way the globe is constructed gives
+you an idea of how complex objects can be created by assembling lower-level
+objects.
+<BR>&nbsp;
+<P>Figure J-2 shows a <I>depth-cued</I> version of the same wireframe scene.
+Note that the lines farther from the eye are dimmer, just as they would
+be in real life, thereby giving a visual cue of depth.
+<BR>&nbsp;
+<P>Figure J-3 shows an <I>antialiased</I> version of the wireframe scene.
+Antialiasing is a technique for reducing the jagged effect created when
+only portions of neighboring pixels properly belong to the image being
+drawn. Such jaggies are usually the most visible with near-horizontal or
+near-vertical lines.
+<BR>&nbsp;
+<P>Figure J-4 shows a <I>flat-shaded</I> version of the scene. The objects
+in the scene are now shown as solid objects of a single color. They appear
+"flat" in the sense that they don't seem to respond to the lighting conditions
+in the room, so they don't appear smoothly rounded.
+<BR>&nbsp;
+<P>Figure J-5 shows a <I>lit, smooth-shaded</I> version of the scene. Note
+how the scene looks much more realistic and three-dimensional when the
+objects are shaded to respond to the light sources in the room; the surfaces
+of the objects now look smoothly rounded.
+<BR>&nbsp;
+<P>Figure J-6 adds <I>shadows</I> and <I>textures</I> to the previous version
+of the scene. Shadows aren't an explicitly defined feature of OpenGL (there
+is no "shadow command"), but you can create them yourself using the techniques
+described in Chapter 13 . Texture mapping allows you to apply a two-dimensional
+texture to a three-dimensional object. In this scene, the top on the table
+surface is the most vibrant example of texture mapping. The walls, floor,
+table surface, and top (on top of the table) are all texture mapped.
+<BR>&nbsp;
+<P>Figure J-7 shows a <I>motion-blurred</I> object in the scene. The sphinx
+(or dog, depending on your Rorschach tendencies) appears to be captured
+as it's moving forward, leaving a blurred trace of its path of motion.
+<BR>&nbsp;
+<P>Figure J-8 shows the scene as it's drawn for the cover of the book from
+a different viewpoint. This plate illustrates that the image really is
+a snapshot of models of three-dimensional objects.</UL>
+The next two color images illustrate yet more complicated visual effects
+that can be achieved with OpenGL:
+<UL>Figure J-9 illustrates the use of atmospheric effects (collectively
+referred to as fog) to show the presence of particles in the air.
+<BR>&nbsp;
+<P>Figure J-10 shows the <I>depth-of-field effect</I>, which simulates
+the inability of a camera lens to maintain all objects in a photographed
+scene in focus. The camera focuses on a particular spot in the scene, and
+objects that are significantly closer or farther than that spot are somewhat
+blurred.</UL>
+The color plates give you an idea of the kinds of things you can do with
+the OpenGL graphics system. The next several paragraphs briefly describe
+the order in which OpenGL performs the major graphics operations necessary
+to render an image on the screen. Appendix A, "Order of Operations" describes
+this order of operations in more detail.
+<OL>Construct shapes from geometric primitives, thereby creating mathematical
+descriptions of objects. (OpenGL considers points, lines, polygons, images,
+and bitmaps to be primitives.)
+<BR>&nbsp;
+<P>Arrange the objects in three-dimensional space and select the desired
+vantage point for viewing the composed scene.
+<BR>&nbsp;
+<P>Calculate the color of all the objects. The color might be explicitly
+assigned by the application, determined from specified lighting conditions,
+or obtained by pasting a texture onto the objects.
+<BR>&nbsp;
+<P>Convert the mathematical description of objects and their associated
+color information to pixels on the screen. This process is called <I>rasterization</I>.</OL>
+During these stages, OpenGL might perform other operations, such as eliminating
+parts of objects that are hidden by other objects (the hidden parts won't
+be drawn, which might increase performance). In addition, after the scene
+is rasterized but just before it's drawn on the screen, you can manipulate
+the pixel data if you want.
+<P>
+<HR>
+<H2>
+A Very Simple OpenGL Program</H2>
+Because you can do so many things with the OpenGL graphics system, an OpenGL
+program can be complicated. However, the basic structure of a useful program
+can be simple: Its tasks are to initialize certain states that control
+how OpenGL renders and to specify objects to be rendered.
+<P>Before you look at an OpenGL program, let's go over a few terms. Rendering,
+which you've already seen used, is the process by which a computer creates
+images from models. These <I>models</I>, or objects, are constructed from
+geometric primitives - points, lines, and polygons - that are specified
+by their vertices.
+<P>The final rendered image consists of pixels drawn on the screen; a pixel
+- short for picture element - is the smallest visible element the display
+hardware can put on the screen. Information about the pixels (for instance,
+what color they're supposed to be) is organized in system memory into bitplanes.
+A bitplane is an area of memory that holds one bit of information for every
+pixel on the screen; the bit might indicate how red a particular pixel
+is supposed to be, for example. The bitplanes are themselves organized
+into a framebuffer, which holds all the information that the graphics display
+needs to control the intensity of all the pixels on the screen.
+<P>Now look at an OpenGL program. Example 1-1 renders a white rectangle
+on a black background, as shown in Figure 1-1 .
+<P><IMG SRC="figures/fig01-01.gif" ALT="[IMAGE]" NOSAVE HEIGHT=269 WIDTH=251>
+<P><B>Figure 1-1 : </B>A White Rectangle on a Black Background
+<BR>&nbsp;
+<BR>&nbsp;
+<P><B>Example 1-1 : </B>A Simple OpenGL Program
+<PRE>#include &lt;whateverYouNeed.h>
+
+main() {
+
+&nbsp;&nbsp; OpenAWindowPlease();
+
+&nbsp;&nbsp; glClearColor(0.0, 0.0, 0.0, 0.0);
+&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT);
+&nbsp;&nbsp; glColor3f(1.0, 1.0, 1.0);
+&nbsp;&nbsp; glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);&nbsp;
+&nbsp;&nbsp; glBegin(GL_POLYGON);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(-0.5, -0.5);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(-0.5, 0.5);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(0.5, 0.5);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(0.5, -0.5);
+&nbsp;&nbsp; glEnd();
+&nbsp;&nbsp; glFlush();
+
+&nbsp;&nbsp; KeepTheWindowOnTheScreenForAWhile();
+}</PRE>
+The first line of the <B>main()</B> routine opens a window on the screen:
+The <B>OpenAWindowPlease()</B> routine is meant as a placeholder for a
+window system-specific routine. The next two lines are OpenGL commands
+that clear the window to black: <B>glClearColor()</B> establishes what
+color the window will be cleared to, and <B>glClear()</B> actually clears
+the window. Once the color to clear to is set, the window is cleared to
+that color whenever <B>glClear()</B> is called. The clearing color can
+be changed with another call to <B>glClearColor()</B>. Similarly, the <B>glColor3f()</B>
+command establishes what color to use for drawing objects - in this case,
+the color is white. All objects drawn after this point use this color,
+until it's changed with another call to set the color.
+<P>The next OpenGL command used in the program, <B>glOrtho()</B>, specifies
+the coordinate system OpenGL assumes as it draws the final image and how
+the image gets mapped to the screen. The next calls, which are bracketed
+by <B>glBegin()</B> and <B>glEnd()</B>, define the object to be drawn -
+in this example, a polygon with four vertices. The polygon's "corners"
+are defined by the <B>glVertex2f()</B> commands. As you might be able to
+guess from the arguments, which are (<I>x, y</I>) coordinate pairs, the
+polygon is a rectangle.
+<P>Finally, <B>glFlush()</B> ensures that the drawing commands are actually
+executed, rather than stored in a buffer awaiting additional OpenGL commands.
+The <B>KeepTheWindowOnTheScreenForAWhile()</B> placeholder routine forces
+the picture to remain on the screen instead of immediately disappearing.
+<P>
+<HR>
+<H2>
+OpenGL Command Syntax</H2>
+As you might have observed from the simple program in the previous section,
+OpenGL commands use the prefix <B>gl</B> and initial capital letters for
+each word making up the command name (recall <B>glClearColor()</B>, for
+example). Similarly, OpenGL defined constants begin with GL_, use all capital
+letters, and use underscores to separate words (like GL_COLOR_BUFFER_BIT).
+<P>You might also have noticed some seemingly extraneous letters appended
+to some command names (the <B>3f</B> in <B>glColor3f()</B>, for example).
+It's true that the <B>Color</B> part of the command name is enough to define
+the command as one that sets the current color. However, more than one
+such command has been defined so that you can use different types of arguments.
+In particular, the <B>3</B> part of the suffix indicates that three arguments
+are given; another version of the <B>Color</B> command takes four arguments.
+The <B>f</B> part of the suffix indicates that the arguments are floating-point
+numbers. Some OpenGL commands accept as many as eight different data types
+for their arguments. The letters used as suffixes to specify these data
+types for ANSI C implementations of OpenGL are shown in Table 1-1 , along
+with the corresponding OpenGL type definitions. The particular implementation
+of OpenGL that you're using might not follow this scheme exactly; an implementation
+in C++ or Ada, for example, wouldn't need to.
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 1-1 : </B>Command Suffixes and Argument Data
+Types</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Suffix</TH>
+
+<TH>Data Type</TH>
+
+<TH>Typical Corresponding C-Language Type</TH>
+
+<TH>OpenGL Type Definition</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>b</TD>
+
+<TD>8-bit integer</TD>
+
+<TD>signed char</TD>
+
+<TD>GLbyte</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>s</TD>
+
+<TD>16-bit integer</TD>
+
+<TD>short</TD>
+
+<TD>GLshort</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>i</TD>
+
+<TD>32-bit integer</TD>
+
+<TD>long</TD>
+
+<TD>GLint, GLsizei</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>f</TD>
+
+<TD>32-bit floating-point</TD>
+
+<TD>float</TD>
+
+<TD>GLfloat, GLclampf</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>d</TD>
+
+<TD>64-bit floating-point</TD>
+
+<TD>double</TD>
+
+<TD>GLdouble, GLclampd</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>ub</TD>
+
+<TD>8-bit unsigned integer</TD>
+
+<TD>unsigned char</TD>
+
+<TD>GLubyte, GLboolean</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>us</TD>
+
+<TD>16-bit unsigned integer</TD>
+
+<TD>unsigned short</TD>
+
+<TD>GLushort</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>ui</TD>
+
+<TD>32-bit unsigned integer</TD>
+
+<TD>unsigned long</TD>
+
+<TD>GLuint, GLenum, GLbitfield</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>Thus, the two commands
+<PRE>glVertex2i(1, 3);
+glVertex2f(1.0, 3.0);</PRE>
+are equivalent, except that the first specifies the vertex's coordinates
+as 32-bit integers and the second specifies them as single-precision floating-point
+numbers.
+<P>Some OpenGL commands can take a final letter <B>v</B>, which indicates
+that the command takes a pointer to a vector (or array) of values rather
+than a series of individual arguments. Many commands have both vector and
+nonvector versions, but some commands accept only individual arguments
+and others require that at least some of the arguments be specified as
+a vector. The following lines show how you might use a vector and a nonvector
+version of the command that sets the current color:
+<PRE>glColor3f(1.0, 0.0, 0.0);
+
+float color_array[] = {1.0, 0.0, 0.0};
+glColor3fv(color_array);</PRE>
+In the rest of this guide (except in actual code examples), OpenGL commands
+are referred to by their base names only, and an asterisk is included to
+indicate that there may be more to the command name. For example, <B>glColor*()</B>
+stands for all variations of the command you use to set the current color.
+If we want to make a specific point about one version of a particular command,
+we include the suffix necessary to define that version. For example, <B>glVertex*v()</B>
+refers to all the vector versions of the command you use to specify vertices.
+<P>Finally, OpenGL defines the constant GLvoid; if you're programming in
+C, you can use this instead of void.
+<P>
+<HR>
+<H2>
+OpenGL as a State Machine</H2>
+OpenGL is a state machine. You put it into various states (or modes) that
+then remain in effect until you change them. As you've already seen, the
+current color is a state variable. You can set the current color to white,
+red, or any other color, and thereafter every object is drawn with that
+color until you set the current color to something else. The current color
+is only one of many state variables that OpenGL preserves. Others control
+such things as the current viewing and projection transformations, line
+and polygon stipple patterns, polygon drawing modes, pixel-packing conventions,
+positions and characteristics of lights, and material properties of the
+objects being drawn. Many state variables refer to modes that are enabled
+or disabled with the command <B>glEnable()</B> or <B>glDisable()</B>.
+<P>Each state variable or mode has a default value, and at any point you
+can query the system for each variable's current value. Typically, you
+use one of the four following commands to do this: <B>glGetBooleanv(),
+glGetDoublev()</B>, <B>glGetFloatv()</B>, or <B>glGetIntegerv()</B>. Which
+of these commands you select depends on what data type you want the answer
+to be given in. Some state variables have a more specific query command
+(such as <B>glGetLight*()</B>, <B>glGetError()</B>, or <B>glGetPolygonStipple()</B>).
+In addition, you can save and later restore the values of a collection
+of state variables on an attribute stack with the <B>glPushAttrib()</B>
+and <B>glPopAttrib()</B> commands. Whenever possible, you should use these
+commands rather than any of the query commands, since they're likely to
+be more efficient.
+<P>The complete list of state variables you can query is found in Appendix
+B . For each variable, the appendix also lists the <B>glGet*()</B> command
+that returns the variable's value, the attribute class to which it belongs,
+and the variable's default value.
+<P>
+<HR>
+<H2>
+OpenGL-related Libraries</H2>
+OpenGL provides a powerful but primitive set of rendering commands, and
+all higher-level drawing must be done in terms of these commands. Therefore,
+you might want to write your own library on top of OpenGL to simplify your
+programming tasks. Also, you might want to write some routines that allow
+an OpenGL program to work easily with your windowing system. In fact, several
+such libraries and routines have already been written to provide specialized
+features, as follows. Note that the first two libraries are provided with
+every OpenGL implementation, the third was written for this book and is
+available using ftp, and the fourth is a separate product that's based
+on OpenGL.
+<UL>The OpenGL Utility Library (GLU) contains several routines that use
+lower-level OpenGL commands to perform such tasks as setting up matrices
+for specific viewing orientations and projections, performing polygon tessellation,
+and rendering surfaces. This library is provided as part of your OpenGL
+implementation. It's described in more detail in Appendix C and in the
+<I>OpenGL
+Reference Manual</I>. The more useful GLU routines are described in the
+chapters in this guide, where they're relevant to the topic being discussed.
+GLU routines use the prefix <B>glu</B>.
+<BR>&nbsp;
+<P>The OpenGL Extension to the X Window System (GLX) provides a means of
+creating an OpenGL context and associating it with a drawable window on
+a machine that uses the X Window System. GLX is provided as an adjunct
+to OpenGL. It's described in more detail in both Appendix D and the <I>OpenGL
+Reference Manual</I>. One of the GLX routines (for swapping framebuffers)
+is described in "Animation." GLX routines use the prefix <B>glX</B>.
+<BR>&nbsp;
+<P>The <I>OpenGL Programming Guide</I> Auxiliary Library was written specifically
+for this book to make programming examples simpler and yet more complete.
+It's the subject of the next section, and it's described in more detail
+in Appendix E . Auxiliary library routines use the prefix <B>aux</B>. "How
+to Obtain the Sample Code" describes how to obtain the source code for
+the auxiliary library.
+<BR>&nbsp;
+<P>Open Inventor is an object-oriented toolkit based on OpenGL that provides
+objects and methods for creating interactive three-dimensional graphics
+applications. Available from Silicon Graphics and written in C++, Open
+Inventor provides pre-built objects and a built-in event model for user
+interaction, high-level application components for creating and editing
+three-dimensional scenes, and the ability to print objects and exchange
+data in other graphics formats.</UL>
+
+<H3>
+The OpenGL Programming Guide Auxiliary Library</H3>
+As you know, OpenGL contains rendering commands but is designed to be independent
+of any window system or operating system. Consequently, it contains no
+commands for opening windows or reading events from the keyboard or mouse.
+Unfortunately, it's impossible to write a complete graphics program without
+at least opening a window, and most interesting programs require a bit
+of user input or other services from the operating system or window system.
+In many cases, complete programs make the most interesting examples, so
+this book uses a small auxiliary library to simplify opening windows, detecting
+input, and so on.
+<P>In addition, since OpenGL's drawing commands are limited to those that
+generate simple geometric primitives (points, lines, and polygons), the
+auxiliary library includes several routines that create more complicated
+three-dimensional objects such as a sphere, a torus, and a teapot. This
+way, snapshots of program output can be interesting to look at. If you
+have an implementation of OpenGL and this auxiliary library on your system,
+the examples in this book should run without change when linked with them.
+<P>The auxiliary library is intentionally simple, and it would be difficult
+to build a large application on top of it. It's intended solely to support
+the examples in this book, but you may find it a useful starting point
+to begin building real applications. The rest of this section briefly describes
+the auxiliary library routines so that you can follow the programming examples
+in the rest of this book. Turn to Appendix E for more details about these
+routines.
+<H4>
+Window Management</H4>
+Three routines perform tasks necessary to initialize and open a window:
+<UL><B>auxInitWindow()</B> opens a window on the screen. It enables the
+Escape key to be used to exit the program, and it sets the background color
+for the window to black.
+<BR>&nbsp;
+<P><B>auxInitPosition()</B> tells <B>auxInitWindow()</B> where to position
+a window on the screen.
+<BR>&nbsp;
+<P><B>auxInitDisplayMode()</B> tells <B>auxInitWindow()</B> whether to
+create an RGBA or color-index window. You can also specify a single- or
+double-buffered window. (If you're working in color-index mode, you'll
+want to load certain colors into the color map; use <B>auxSetOneColor()</B>
+to do this.) Finally, you can use this routine to indicate that you want
+the window to have an associated depth, stencil, and/or accumulation buffer.</UL>
+
+<H4>
+Handling Input Events</H4>
+You can use these routines to register callback commands that are invoked
+when specified events occur.
+<UL><B>auxReshapeFunc()</B> indicates what action should be taken when
+the window is resized, moved, or exposed.
+<BR>&nbsp;
+<P><B>auxKeyFunc()</B> and <B>auxMouseFunc()</B> allow you to link a keyboard
+key or a mouse button with a routine that's invoked when the key or mouse
+button is pressed or released.</UL>
+
+<H4>
+Drawing 3-D Objects</H4>
+The auxiliary library includes several routines for drawing these three-dimensional
+objects:
+<P>sphere octahedron
+<P>cube dodecahedron
+<P>torus icosahedron
+<P>cylinder teapot
+<P>cone
+<P>You can draw these objects as wireframes or as solid shaded objects
+with surface normals defined. For example, the routines for a sphere and
+a torus are as follows:
+<P>void <B>auxWireSphere</B>(GLdouble <B>radius</B>);
+<P>void <B>auxSolidSphere</B>(GLdouble <B>radius</B>);
+<P>void <B>auxWireTorus</B>(GLdouble <B>innerRadius</B>, GLdouble <B>outerRadius</B>);
+<P>void <B>auxSolidTorus</B>(GLdouble <B>innerRadius</B>, GLdouble <B>outerRadius</B>);
+<P>All these models are drawn centered at the origin. When drawn with unit
+scale factors, these models fit into a box with all coordinates from -1
+to 1. Use the arguments for these routines to scale the objects.
+<H4>
+Managing a Background Process</H4>
+You can specify a function that's to be executed if no other events are
+pending - for example, when the event loop would otherwise be idle - with
+<B>auxIdleFunc()</B>.
+This routine takes a pointer to the function as its only argument. Pass
+in zero to disable the execution of the function.
+<H4>
+Running the Program</H4>
+Within your <B>main()</B> routine, call <B>auxMainLoop()</B> and pass it
+the name of the routine that redraws the objects in your scene. Example
+1-2 shows how you might use the auxiliary library to create the simple
+program shown in Example 1-1 .
+<P><B>Example 1-2 : </B>A Simple OpenGL Program Using the Auxiliary Library:
+simple.c
+<PRE>#include &lt;GL/gl.h>
+#include "aux.h"
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode (AUX_SINGLE | AUX_RGBA);
+&nbsp;&nbsp;&nbsp; auxInitPosition (0, 0, 500, 500);
+&nbsp;&nbsp;&nbsp; auxInitWindow (argv[0]);
+
+&nbsp;&nbsp;&nbsp; glClearColor (0.0, 0.0, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; glColor3f(1.0, 1.0, 1.0);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glLoadIdentity();
+&nbsp;&nbsp;&nbsp; glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+&nbsp;&nbsp;&nbsp; glBegin(GL_POLYGON);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(-0.5, -0.5);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(-0.5, 0.5);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(0.5, 0.5);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(0.5, -0.5);
+&nbsp;&nbsp;&nbsp; glEnd();
+&nbsp;&nbsp;&nbsp; glFlush();
+
+&nbsp;&nbsp;&nbsp; sleep(10);
+}</PRE>
+
+<HR>
+<H2>
+Animation</H2>
+One of the most exciting things you can do on a graphics computer is draw
+pictures that move. Whether you're an engineer trying to see all sides
+of a mechanical part you're designing, a pilot learning to fly an airplane
+using a simulation, or merely a computer-game aficionado, it's clear that
+animation is an important part of computer graphics.
+<P>In a movie theater, motion is achieved by taking a sequence of pictures
+(24 per second), and then projecting them at 24 per second on the screen.
+Each frame is moved into position behind the lens, the shutter is opened,
+and the frame is displayed. The shutter is momentarily closed while the
+film is advanced to the next frame, then that frame is displayed, and so
+on. Although you're watching 24 different frames each second, your brain
+blends them all into a smooth animation. (The old Charlie Chaplin movies
+were shot at 16 frames per second and are noticeably jerky.) In fact, most
+modern projectors display each picture twice at a rate of 48 per second
+to reduce flickering. Computer-graphics screens typically refresh (redraw
+the picture) approximately 60 to 76 times per second, and some even run
+at about 120 refreshes per second. Clearly, 60 per second is smoother than
+30, and 120 is marginally better than 60. Refresh rates faster than 120,
+however, are beyond the point of diminishing returns, since the human eye
+is only so good.
+<P>The key idea that makes motion picture projection work is that when
+it is displayed, each frame is complete. Suppose you try to do computer
+animation of your million-frame movie with a program like this:
+<PRE>open_window();&nbsp;
+for (i = 0; i &lt; 1000000; i++) {&nbsp;
+&nbsp;&nbsp; clear_the_window();&nbsp;
+&nbsp;&nbsp; draw_frame(i);&nbsp;
+&nbsp;&nbsp; wait_until_a_24th_of_a_second_is_over();&nbsp;
+}</PRE>
+If you add the time it takes for your system to clear the screen and to
+draw a typical frame, this program gives more and more disturbing results
+depending on how close to 1/24 second it takes to clear and draw. Suppose
+the drawing takes nearly a full 1/24 second. Items drawn first are visible
+for the full 1/24 second and present a solid image on the screen; items
+drawn toward the end are instantly cleared as the program starts on the
+next frame, so they present at best a ghostlike image, since for most of
+the 1/24 second your eye is viewing the cleared background instead of the
+items that were unlucky enough to be drawn last. The problem is that this
+program doesn't display completely drawn frames; instead, you watch the
+drawing as it happens.
+<P>An easy solution is to provide double-buffering - hardware or software
+that supplies two complete color buffers. One is displayed while the other
+is being drawn. When the drawing of a frame is complete, the two buffers
+are swapped, so the one that was being viewed is now used for drawing,
+and vice versa. It's like a movie projector with only two frames in a loop;
+while one is being projected on the screen, an artist is desperately erasing
+and redrawing the frame that's not visible. As long as the artist is quick
+enough, the viewer notices no difference between this setup and one where
+all the frames are already drawn and the projector is simply displaying
+them one after the other. With double-buffering, every frame is shown only
+when the drawing is complete; the viewer never sees a partially drawn frame.
+<P>A modified version of the preceding program that does display smoothly
+animated graphics might look like this:
+<PRE>open_window_in_double_buffer_mode();&nbsp;
+for (i = 0; i &lt; 1000000; i++) {&nbsp;
+&nbsp;&nbsp; clear_the_window();&nbsp;
+&nbsp;&nbsp; draw_frame(i);&nbsp;
+&nbsp;&nbsp; swap_the_buffers();&nbsp;
+}</PRE>
+In addition to simply swapping the viewable and drawable buffers, the <B>swap_the_buffers()</B>
+routine waits until the current screen refresh period is over so that the
+previous buffer is completely displayed. This routine also allows the new
+buffer to be completely displayed, starting from the beginning. Assuming
+that your system refreshes the display 60 times per second, this means
+that the fastest frame rate you can achieve is 60 frames per second, and
+if all your frames can be cleared and drawn in under 1/60 second, your
+animation will run smoothly at that rate.
+<P>What often happens on such a system is that the frame is too complicated
+to draw in 1/60 second, so each frame is displayed more than once. If,
+for example, it takes 1/45 second to draw a frame, you get 30 frames per
+second, and the graphics are idle for 1/30-1/45=1/90 second per frame.
+Although 1/90 second of wasted time might not sound bad, it's wasted each
+1/30 second, so actually one-third of the time is wasted.
+<P>In addition, the video refresh rate is constant, which can have some
+unexpected performance consequences. For example, with the 1/60 second
+per refresh monitor and a constant frame rate, you can run at 60 frames
+per second, 30 frames per second, 20 per second, 15 per second, 12 per
+second, and so on (60/1, 60/2, 60/3, 60/4, 60/5, ...). That means that
+if you're writing an application and gradually adding features (say it's
+a flight simulator, and you're adding ground scenery), at first each feature
+you add has no effect on the overall performance - you still get 60 frames
+per second. Then, all of a sudden, you add one new feature, and your performance
+is cut in half because the system can't quite draw the whole thing in 1/60
+of a second, so it misses the first possible buffer-swapping time. A similar
+thing happens when the drawing time per frame is more than 1/30 second
+- the performance drops from 30 to 20 frames per second, giving a 33 percent
+performance hit.
+<P>Another problem is that if the scene's complexity is close to any of
+the magic times (1/60 second, 2/60 second, 3/60 second, and so on in this
+example), then because of random variation, some frames go slightly over
+the time and some slightly under, and the frame rate is irregular, which
+can be visually disturbing. In this case, if you can't simplify the scene
+so that all the frames are fast enough, it might be better to add an intentional
+tiny delay to make sure they all miss, giving a constant, slower, frame
+rate. If your frames have drastically different complexities, a more sophisticated
+approach might be necessary.
+<P>Interestingly, the structure of real animation programs does not differ
+too much from this description. Usually, the entire buffer is redrawn from
+scratch for each frame, as it is easier to do this than to figure out what
+parts require redrawing. This is especially true with applications such
+as three-dimensional flight simulators where a tiny change in the plane's
+orientation changes the position of everything outside the window.
+<P>In most animations, the objects in a scene are simply redrawn with different
+transformations - the viewpoint of the viewer moves, or a car moves down
+the road a bit, or an object is rotated slightly. If significant modifications
+to a structure are being made for each frame where there's significant
+recomputation, the attainable frame rate often slows down. Keep in mind,
+however, that the idle time after the <B>swap_the_buffers()</B> routine
+can often be used for such calculations.
+<P>OpenGL doesn't have a <B>swap_the_buffers()</B> command because the
+feature might not be available on all hardware and, in any case, it's highly
+dependent on the window system. However, GLX provides such a command, for
+use on machines that use the X Window System:
+<PRE>void glXSwapBuffers(Display *<B>dpy</B>, Window <B>window</B>);</PRE>
+Example 1-3 illustrates the use of <B>glXSwapBuffers()</B> in an example
+that draws a square that rotates constantly, as shown in Figure 1-2 .
+<P><IMG SRC="figures/doublebuf.gif" ALT="[IMAGE]" NOSAVE HEIGHT=190 WIDTH=662>
+<P><B>Figure 1-2 : </B>A Double-Buffered Rotating Square
+<BR>&nbsp;
+<BR>&nbsp;
+<P><B>Example 1-3 : </B>A Double-Buffered Program: double.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include &lt;GL/glx.h>
+#include "aux.h"
+
+static GLfloat spin = 0.0;
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; glPushMatrix();
+&nbsp;&nbsp;&nbsp; glRotatef(spin, 0.0, 0.0, 1.0);
+&nbsp;&nbsp;&nbsp; glRectf(-25.0, -25.0, 25.0, 25.0);
+&nbsp;&nbsp;&nbsp; glPopMatrix();
+
+&nbsp;&nbsp;&nbsp; glFlush();
+&nbsp;&nbsp;&nbsp; glXSwapBuffers(auxXDisplay(), auxXWindow());
+}
+
+void spinDisplay(void)
+{
+&nbsp;&nbsp;&nbsp; spin = spin + 2.0;
+&nbsp;&nbsp;&nbsp; if (spin > 360.0)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; spin = spin - 360.0;
+&nbsp;&nbsp;&nbsp; display();
+}
+
+void startIdleFunc(AUX_EVENTREC *event)
+{
+&nbsp;&nbsp;&nbsp; auxIdleFunc(spinDisplay);
+}
+
+void stopIdleFunc(AUX_EVENTREC *event)
+{
+&nbsp;&nbsp;&nbsp; auxIdleFunc(0);
+}
+
+void myinit(void)
+{
+&nbsp;&nbsp;&nbsp; glClearColor(0.0, 0.0, 0.0, 1.0);
+&nbsp;&nbsp;&nbsp; glColor3f(1.0, 1.0, 1.0);
+&nbsp;&nbsp;&nbsp; glShadeModel(GL_FLAT);
+}
+
+void myReshape(GLsizei w, GLsizei h)
+{
+&nbsp;&nbsp;&nbsp; glViewport(0, 0, w, h);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glLoadIdentity();
+&nbsp;&nbsp;&nbsp; if (w &lt;= h)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glOrtho (-50.0, 50.0, -50.0*(GLfloat)h/(GLfloat)w,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 50.0*(GLfloat)h/(GLfloat)w, -1.0, 1.0);
+&nbsp;&nbsp;&nbsp; else&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glOrtho (-50.0*(GLfloat)w/(GLfloat)h,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 50.0*(GLfloat)w/(GLfloat)h, -50.0, 50.0, -1.0, 1.0);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_MODELVIEW);
+&nbsp;&nbsp;&nbsp; glLoadIdentity ();
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode(AUX_DOUBLE | AUX_RGBA);
+&nbsp;&nbsp;&nbsp; auxInitPosition(0, 0, 500, 500);
+&nbsp;&nbsp;&nbsp; auxInitWindow(argv[0]);
+&nbsp;&nbsp;&nbsp; myinit();
+&nbsp;&nbsp;&nbsp; auxReshapeFunc(myReshape);
+&nbsp;&nbsp;&nbsp; auxIdleFunc(spinDisplay);
+&nbsp;&nbsp;&nbsp; auxMouseFunc(AUX_LEFTBUTTON, AUX_MOUSEDOWN, startIdleFunc);
+&nbsp;&nbsp;&nbsp; auxMouseFunc(AUX_MIDDLEBUTTON, AUX_MOUSEDOWN, stopIdleFunc);
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+
+<HR>
+[Previous chapter] <A HREF="chapter02.html">[Next chapter]</A>
+<HR>
+See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>

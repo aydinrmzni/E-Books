@@ -1,0 +1,1694 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Chapter 2 - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<HR>
+<H1>
+Chapter 2<BR>
+Drawing Geometric Objects</H1>
+<B>Chapter Objectives</B>
+<P>After reading this chapter, you'll be able to do the following:
+<UL>Clear the window to an arbitrary color
+<BR>&nbsp;
+<P>Draw with any geometric primitive - points, lines, and polygons - in
+two or three dimensions
+<BR>&nbsp;
+<P>Control the display of those primitives - for example, draw dashed lines
+or outlined polygons
+<BR>&nbsp;
+<P>Specify normal vectors at appropriate points on the surface of solid
+objects
+<BR>&nbsp;
+<P>Force any pending drawing to complete</UL>
+Although you can draw complex and interesting pictures using OpenGL, they're
+all constructed from a small number of primitive graphical items. This
+shouldn't be too surprising - look at what Leonardo da Vinci accomplished
+with just pencils and paintbrushes.
+<P>At the highest level of abstraction, there are three basic drawing operations:
+clearing the window, drawing a geometric object, and drawing a raster object.
+Raster objects, which include such things as two-dimensional images, bitmaps,
+and character fonts, are covered in Chapter 8 . In this chapter, you learn
+how to clear the screen and to draw geometric objects, including points,
+straight lines, and flat polygons.
+<P>You might think to yourself, "Wait a minute. I've seen lots of computer
+graphics in movies and on television, and there are plenty of beautifully
+shaded curved lines and surfaces. How are those drawn, if all OpenGL can
+draw are straight lines and flat polygons?" Even the image on the cover
+of this book includes a round table and objects on the table that have
+curved surfaces. It turns out that all the curved lines and surfaces you've
+seen are approximated by large numbers of little flat polygons or straight
+lines, in much the same way that the globe on the cover is constructed
+from a large set of rectangular blocks. The globe doesn't appear to have
+a smooth surface because the blocks are relatively large compared to the
+globe. Later in this chapter, we show you how to construct curved lines
+and surfaces from lots of small geometric primitives.
+<P>This chapter has the following major sections:
+<UL>"A Drawing Survival Kit" explains how to clear the window and force
+drawing to be completed. It also gives you basic information about controlling
+the color of geometric objects and about hidden-surface removal.
+<BR>&nbsp;
+<P>"Describing Points, Lines, and Polygons" shows you what the set of primitive
+geometric objects is and how to draw them.
+<BR>&nbsp;
+<P>"Displaying Points, Lines, and Polygons" explains what control you have
+over the details of how primitives are drawn - for example, what diameter
+points have, whether lines are solid or dashed, and whether polygons are
+outlined or filled.
+<BR>&nbsp;
+<P>"Normal Vectors" discusses how to specify normal vectors for geometric
+objects and (briefly) what these vectors are for.
+<BR>&nbsp;
+<P>"Some Hints for Building Polygonal Models of Surfaces" explores the
+issues and techniques involved in constructing polygonal approximations
+to surfaces.</UL>
+One thing to keep in mind as you read the rest of this chapter is that
+with OpenGL, unless you specify otherwise, every time you issue a drawing
+command, the specified object is drawn. This might seem obvious, but in
+some systems, you first make a list of things to draw, and when it's complete,
+you tell the graphics hardware to draw the items in the list. The first
+style is called immediate-mode graphics and is OpenGL's default style.
+In addition to using immediate mode, you can choose to save some commands
+in a list (called a display list) for later drawing. Immediate-mode graphics
+is typically easier to program, but display lists are often more efficient.
+Chapter
+4 tells you how to use display lists and why you might want to use them.
+<P>
+<HR>
+<H2>
+A Drawing Survival Kit</H2>
+This section explains how to clear the window in preparation for drawing,
+set the color of objects that are to be drawn, and force drawing to be
+completed. None of these subjects has anything to do with geometric objects
+in a direct way, but any program that draws geometric objects has to deal
+with these issues. This section also introduces the concept of hidden-surface
+removal, a technique that can be used to draw geometric objects easily.
+<H3>
+Clearing the Window</H3>
+Drawing on a computer screen is different from drawing on paper in that
+the paper starts out white, and all you have to do is draw the picture.
+On a computer, the memory holding the picture is usually filled with the
+last picture you drew, so you typically need to clear it to some background
+color before you start to draw the new scene. The color you use for the
+background depends on the application. For a word processor, you might
+clear to white (the color of the paper) before you begin to draw the text.
+If you're drawing a view from a spaceship, you clear to the black of space
+before beginning to draw the stars, planets, and alien spaceships. Sometimes
+you might not need to clear the screen at all; for example, if the image
+is the inside of a room, the entire graphics window gets covered as you
+draw all the walls.
+<P>At this point, you might be wondering why we keep talking about <I>clearing</I>
+the window - why not just draw a rectangle of the appropriate color that's
+large enough to cover the entire window? First, a special command to clear
+a window can be much more efficient than a general-purpose drawing command.
+In addition, as you'll see in Chapter 3 , OpenGL allows you to set the
+coordinate system, viewing position, and viewing direction arbitrarily,
+so it might be difficult to figure out an appropriate size and location
+for a window-clearing rectangle. Also, you can have OpenGL use hidden-surface
+removal techniques that eliminate objects obscured by others nearer to
+the eye; thus, if the window-clearing rectangle is to be a background,
+you must make sure that it's behind all the other objects of interest.
+With an arbitrary coordinate system and point of view, this might be difficult.
+Finally, on many machines, the graphics hardware consists of multiple buffers
+in addition to the buffer containing colors of the pixels that are displayed.
+These other buffers must be cleared from time to time, and it's convenient
+to have a single command that can clear any combination of them. (All the
+possible buffers are discussed in Chapter 10 .)
+<P>As an example, these lines of code clear the window to black:
+<PRE>glClearColor(0.0, 0.0, 0.0, 0.0);&nbsp;
+glClear(GL_COLOR_BUFFER_BIT);</PRE>
+The first line sets the clearing color to black, and the next command clears
+the entire window to the current clearing color. The single parameter to
+<B>glClear()</B>
+indicates which buffers are to be cleared. In this case, the program clears
+only the color buffer, where the image displayed on the screen is kept.
+Typically, you set the clearing color once, early in your application,
+and then you clear the buffers as often as necessary. OpenGL keeps track
+of the current clearing color as a state variable rather than requiring
+you to specify it each time a buffer is cleared.
+<P>Chapter 5 and Chapter 10 talk about how other buffers are used. For
+now, all you need to know is that clearing them is simple. For example,
+to clear both the color buffer and the depth buffer, you would use the
+following sequence of commands:
+<PRE>glClearColor(0.0, 0.0, 0.0, 0.0);&nbsp;
+glClearDepth(0.0);&nbsp;
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);</PRE>
+In this case, the call to <B>glClearColor()</B> is the same as before,
+the <B>glClearDepth()</B> command specifies the value to which every pixel
+of the depth buffer is to be set, and the parameter to the <B>glClear()</B>
+command now consists of the logical OR of all the buffers to be cleared.
+The following summary of <B>glClear()</B> includes a table that lists the
+buffers that can be cleared, their names, and the chapter where each type
+of buffer is discussed.void <B>glClearColor</B>(GLclampf <B>red</B>, GLclampf
+<B>green</B>,
+GLclampf <B>blue</B>, GLclampf <B>alpha</B>);
+<P>Sets the current clearing color for use in clearing color buffers in
+RGBA mode. For more information on RGBA mode, see Chapter 5 . The <B>red</B>,
+<B>green</B>, <B>blue</B>, and <B>alpha</B> values are clamped if necessary
+to the range [0,1]. The default clearing color is (0, 0, 0, 0), which is
+black.
+<P>void <B>glClear</B>(GLbitfield <B>mask</B>);
+<P>Clears the specified buffers to their current clearing values. The <I>mask</I>
+argument is a bitwise-ORed combination of the values listed in Table 2-1
+.
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 2-1 : </B>Clearing Buffers</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Buffer</TH>
+
+<TH>Name</TH>
+
+<TH>Reference</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>Color buffer</TD>
+
+<TD>GL_COLOR_BUFFER_BIT</TD>
+
+<TD>Chapter 5</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>Depth buffer</TD>
+
+<TD>GL_DEPTH_BUFFER_BIT</TD>
+
+<TD>Chapter 10</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>Accumulation buffer</TD>
+
+<TD>GL_ACCUM_BUFFER_BIT</TD>
+
+<TD>Chapter 10</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>Stencil buffer</TD>
+
+<TD>GL_STENCIL_BUFFER_BIT</TD>
+
+<TD>Chapter 10</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>Before issuing a command to clear multiple buffers, you have to set
+the values to which each buffer is to be cleared if you want something
+other than the default color, depth value, accumulation color, and stencil
+index. In addition to the <B>glClearColor()</B> and <B>glClearDepth()</B>
+commands that set the current values for clearing the color and depth buffers,
+<B>glClearIndex()</B>,
+<B>glClearAccum()</B>, and <B>glClearStencil()</B> specify the color index,
+accumulation color, and stencil index used to clear the corresponding buffers.
+See Chapter 5 and Chapter 10 for descriptions of these buffers and their
+uses.
+<P>OpenGL allows you to specify multiple buffers because clearing is generally
+a slow operation, since every pixel in the window (possibly millions) is
+touched, and some graphics hardware allows sets of buffers to be cleared
+simultaneously. Hardware that doesn't support simultaneous clears performs
+them sequentially. The difference between
+<PRE>glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);</PRE>
+and
+<PRE>glClear(GL_COLOR_BUFFER_BIT);&nbsp;
+glClear(GL_DEPTH_BUFFER_BIT);</PRE>
+is that although both have the same final effect, the first example might
+run faster on many machines. It certainly won't run more slowly.
+<H3>
+Specifying a Color</H3>
+With OpenGL, the description of the shape of an object being drawn is independent
+of the description of its color. Whenever a particular geometric object
+is drawn, it's drawn using the currently specified coloring scheme. The
+coloring scheme might be as simple as "draw everything in fire-engine red,"
+or might be as complicated as "assume the object is made out of blue plastic,
+that there's a yellow spotlight pointed in such and such a direction, and
+that there's a general low-level reddish-brown light everywhere else."
+In general, an OpenGL programmer first sets the color or coloring scheme,
+and then draws the objects. Until the color or coloring scheme is changed,
+all objects are drawn in that color or using that coloring scheme. This
+method helps OpenGL achieve higher drawing performance than would result
+if it didn't keep track of the current color.
+<P>For example, the pseudocode
+<PRE>set_current_color(red);&nbsp;
+draw_object(A);&nbsp;
+draw_object(B);&nbsp;
+set_current_color(green);&nbsp;
+set_current_color(blue);&nbsp;
+draw_object(C);</PRE>
+draws objects A and B in red, and object C in blue. The command on the
+fourth line that sets the current color to green is wasted.
+<P>Coloring, lighting, and shading are all large topics with entire chapters
+or large sections devoted to them. To draw geometric primitives that can
+be seen, however, you need some basic knowledge of how to set the current
+color; this information is provided in the next paragraphs. For details
+on these topics, see Chapter 5 and Chapter 6 .
+<P>To set a color, use the command <B>glColor3f()</B>. It takes three parameters,
+all of which are floating-point numbers between 0.0 and 1.0. The parameters
+are, in order, the red, green, and blue components of the color. You can
+think of these three values as specifying a "mix" of colors: 0.0 means
+don't use any of that component, and 1.0 means use all you can of that
+component. Thus, the code
+<PRE>glColor3f(1.0, 0.0, 0.0);</PRE>
+makes the brightest red the system can draw, with no green or blue components.
+All zeros makes black; in contrast, all ones makes white. Setting all three
+components to 0.5 yields gray (halfway between black and white). Here are
+eight commands and the colors they would set:
+<PRE>glColor3f(0.0, 0.0, 0.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; black&nbsp;
+glColor3f(1.0, 0.0, 0.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; red&nbsp;
+glColor3f(0.0, 1.0, 0.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; green&nbsp;
+glColor3f(1.0, 1.0, 0.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; yellow&nbsp;
+glColor3f(0.0, 0.0, 1.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; blue&nbsp;
+glColor3f(1.0, 0.0, 1.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; magenta&nbsp;
+glColor3f(0.0, 1.0, 1.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cyan&nbsp;
+glColor3f(1.0, 1.0, 1.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; white</PRE>
+You might have noticed earlier that when you're setting the color to clear
+the color buffer, <B>glClearColor()</B> takes four parameters, the first
+three of which match the parameters for <B>glColor3f()</B>. The fourth
+parameter is the alpha value; it's covered in detail in "Blending." For
+now, always set the fourth parameter to 0.0.
+<H3>
+Forcing Completion of Drawing</H3>
+Most modern graphics systems can be thought of as an assembly line, sometimes
+called a graphics <I>pipeline</I>. The main central processing unit (CPU)
+issues a drawing command, perhaps other hardware does geometric transformations,
+clipping occurs, then shading or texturing is performed, and finally, the
+values are written into the bitplanes for display (see Appendix A for details
+on the order of operations). In high-end architectures, each of these operations
+is performed by a different piece of hardware that's been designed to perform
+its particular task quickly. In such an architecture, there's no need for
+the CPU to wait for each drawing command to complete before issuing the
+next one. While the CPU is sending a vertex down the pipeline, the transformation
+hardware is working on transforming the last one sent, the one before that
+is being clipped, and so on. In such a system, if the CPU waited for each
+command to complete before issuing the next, there could be a huge performance
+penalty.
+<P>In addition, the application might be running on more than one machine.
+For example, suppose that the main program is running elsewhere (on a machine
+called the client), and that you're viewing the results of the drawing
+on your workstation or terminal (the server), which is connected by a network
+to the client. In that case, it might be horribly inefficient to send each
+command over the network one at a time, since considerable overhead is
+often associated with each network transmission. Usually, the client gathers
+a collection of commands into a single network packet before sending it.
+Unfortunately, the network code on the client typically has no way of knowing
+that the graphics program is finished drawing a frame or scene. In the
+worst case, it waits forever for enough additional drawing commands to
+fill a packet, and you never see the completed drawing.
+<P>For this reason, OpenGL provides the command <B>glFlush()</B>, which
+forces the client to send the network packet even though it might not be
+full. Where there is no network and all commands are truly executed immediately
+on the server, <B>glFlush()</B> might have no effect. However, if you're
+writing a program that you want to work properly both with and without
+a network, include a call to <B>glFlush()</B> at the end of each frame
+or scene. Note that <B>glFlush()</B> doesn't wait for the drawing to complete
+- it just forces the drawing to begin execution, thereby guaranteeing that
+all previous commands execute in finite time even if no further rendering
+commands are executed.
+<P>A few commands - for example, commands that swap buffers in double-buffer
+mode - automatically flush pending commands onto the network before they
+can occur. void <B>glFlush</B>(void);
+<P>Forces previously issued OpenGL commands to begin execution, thus guaranteeing
+that they complete in finite time.
+<P>If <B>glFlush()</B> isn't sufficient for you, try <B>glFinish()</B>.
+This command flushes the network as <B>glFlush()</B> does and then waits
+for notification from the graphics hardware or network indicating that
+the drawing is complete in the framebuffer. You might need to use <B>glFinish()</B>
+if you want to synchronize tasks - for example, to make sure that your
+three-dimensional rendering is on the screen before you use Display PostScript
+to draw labels on top of the rendering. Another example would be to ensure
+that the drawing is complete before it begins to accept user input. After
+you issue a <B>glFinish()</B> command, your graphics process is blocked
+until it receives notification from the graphics hardware (or client, if
+you're running over a network) that the drawing is complete. Keep in mind
+that excessive use of <B>glFinish()</B> can reduce the performance of your
+application, especially if you're running over a network, because it requires
+round-trip communication. If <B>glFlush()</B> is sufficient for your needs,
+use it instead of <B>glFinish()</B>.void <B>glFinish</B>(void);
+<P>Forces all previously issued OpenGL commands to complete. This command
+doesn't return until all effects from previous commands are fully realized.
+<H3>
+Hidden-Surface Removal Survival Kit</H3>
+When you draw a scene composed of three-dimensional objects, some of them
+might obscure all or parts of others. Changing your viewpoint can change
+the obscuring relationship. For example, if you view the scene from the
+opposite direction, any object that was previously in front of another
+is now behind it. To draw a realistic scene, these obscuring relationships
+must be maintained. If your code works something like this
+<PRE>while (1) {&nbsp;
+&nbsp;&nbsp; get_viewing_point_from_mouse_position();&nbsp;
+&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT);&nbsp;
+&nbsp;&nbsp; draw_3d_object_A();&nbsp;
+&nbsp;&nbsp; draw_3d_object_B();&nbsp;
+}</PRE>
+it might be that for some mouse positions, object A obscures object B,
+and for others, the opposite relationship might hold. If nothing special
+is done, the preceding code always draws object B second, and thus on top
+of object A, no matter what viewing position is selected.
+<P>The elimination of parts of solid objects that are obscured by others
+is called <I>hidden-surface removal</I>. (Hidden-line removal, which does
+the same job for objects represented as wireframe skeletons, is a bit trickier,
+and it isn't discussed here. See "Hidden-Line Removal," for details.) The
+easiest way to achieve hidden-surface removal is to use the depth buffer
+(sometimes called a z-buffer). (Also see Chapter 10 .)
+<P>A depth buffer works by associating a depth, or distance from the viewpoint,
+with each pixel on the window. Initially, the depth values for all pixels
+are set to the largest possible distance using the <B>glClear()</B> command
+with GL_DEPTH_BUFFER_BIT, and then the objects in the scene are drawn in
+any order.
+<P>Graphical calculations in hardware or software convert each surface
+that's drawn to a set of pixels on the window where the surface will appear
+if it isn't obscured by something else. In addition, the distance from
+the eye is computed. With depth buffering enabled, before each pixel is
+drawn, a comparison is done with the depth value already stored at the
+pixel. If the new pixel is closer to the eye than what's there, the new
+pixel's color and depth values replace those that are currently written
+into the pixel. If the new pixel's depth is greater than what's currently
+there, the new pixel would be obscured, and the color and depth information
+for the incoming pixel is discarded. Since information is discarded rather
+than used for drawing, hidden-surface removal can increase your performance.
+<P>To use depth buffering, you need to enable depth buffering. This has
+to be done only once. Each time you draw the scene, before drawing you
+need to clear the depth buffer and then draw the objects in the scene in
+any order.
+<P>To convert the preceding program fragment so that it performs hidden-surface
+removal, modify it to the following:
+<PRE>glEnable(GL_DEPTH_TEST);&nbsp;
+...&nbsp;
+while (1) {&nbsp;
+&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);&nbsp;
+&nbsp;&nbsp; get_viewing_point_from_mouse_position();&nbsp;
+&nbsp;&nbsp; draw_3d_object_A();&nbsp;
+&nbsp;&nbsp; draw_3d_object_B(); }</PRE>
+The argument to <B>glClear()</B> clears both the depth and color buffers.
+<P>
+<HR>
+<H2>
+Describing Points, Lines, and Polygons</H2>
+This section explains how to describe OpenGL geometric primitives. All
+geometric primitives are eventually described in terms of their <I>vertices</I>
+- coordinates that define the points themselves, the endpoints of line
+segments, or the corners of polygons. The next section discusses how these
+primitives are displayed and what control you have over their display.
+<H3>
+What Are Points, Lines, and Polygons?</H3>
+You probably have a fairly good idea of what a mathematician means by the
+terms point, line, and polygon. The OpenGL meanings aren't quite the same,
+however, and it's important to understand the differences. The differences
+arise because mathematicians can think in a geometrically perfect world,
+whereas the rest of us have to deal with real-world limitations.
+<P>For example, one difference comes from the limitations of computer-based
+calculations. In any OpenGL implementation, floating-point calculations
+are of finite precision, and they have round-off errors. Consequently,
+the coordinates of OpenGL points, lines, and polygons suffer from the same
+problems.
+<P>Another difference arises from the limitations of a bitmapped graphics
+display. On such a display, the smallest displayable unit is a pixel, and
+although pixels might be less than 1/100th of an inch wide, they are still
+much larger than the mathematician's infinitely small (for points) or infinitely
+thin (for lines). When OpenGL performs calculations, it assumes points
+are represented as vectors of floating-point numbers. However, a point
+is typically (but not always) drawn as a single pixel, and many different
+points with slightly different coordinates could be drawn by OpenGL on
+the same pixel.
+<H4>
+Points</H4>
+A point is represented by a set of floating-point numbers called a vertex.
+All internal calculations are done as if vertices are three-dimensional.
+Vertices specified by the user as two-dimensional (that is, with only <I>x</I>
+and <I>y</I> coordinates) are assigned a <I>z</I> coordinate equal to zero
+by OpenGL.
+<P><B>Advanced</B>
+<P>OpenGL works in the homogeneous coordinates of three-dimensional projective
+geometry, so for internal calculations, all vertices are represented with
+four floating-point coordinates (<I>x</I>, <I>y</I>, <I>z</I>, <I>w</I>).
+If <I>w</I> is different from zero, these coordinates correspond to the
+euclidean three-dimensional point (<I>x/w, y/w, z/w</I>). You can specify
+the <I>w</I> coordinate in OpenGL commands, but that's rarely done. If
+the <I>w</I> coordinate isn't specified, it's understood to be 1.0. For
+more information about homogeneous coordinate systems, see Appendix G .
+<H4>
+Lines</H4>
+In OpenGL, <I>line</I> means <I>line segment</I>, not the mathematician's
+version that extends to infinity in both directions. There are easy ways
+to specify a connected series of line segments, or even a closed, connected
+series of segments (see Figure 2-1 ). In all cases, though, the lines comprising
+the connected series are specified in terms of the vertices at their endpoints.
+<P><IMG SRC="figures/fig02-01.gif" ALT="[IMAGE]" NOSAVE HEIGHT=145 WIDTH=449>
+<P><B>Figure 2-1 : </B>Two Connected Series of Line Segments
+<BR>&nbsp;
+<BR>&nbsp;
+<H4>
+Polygons</H4>
+Polygons are the areas enclosed by single closed loops of line segments,
+where the line segments are specified by the vertices at their endpoints.
+Polygons are typically drawn with the pixels in the interior filled in,
+but you can also draw them as outlines or a set of points, as described
+in "Polygon Details."
+<P>In general, polygons can be complicated, so OpenGL makes some strong
+restrictions on what constitutes a primitive polygon. First, the edges
+of OpenGL polygons can't intersect (a mathematician would call this a <I>simple
+polygon</I>). Second, OpenGL polygons must be convex, meaning that they
+cannot have indentations. Stated precisely, a region is convex if, given
+any two points in the interior, the line segment joining them is also in
+the interior. See Figure 2-2 for some examples of valid and invalid polygons.
+OpenGL, however, doesn't restrict the number of line segments making up
+the boundary of a convex polygon. Note that polygons with holes can't be
+described. They are nonconvex, and they can't be drawn with a boundary
+made up of a single closed loop. Be aware that if you present OpenGL with
+a nonconvex filled polygon, it might not draw it as you expect. For instance,
+on most systems no more than the convex hull of the polygon would be filled,
+but on some systems, less than the convex hull might be filled.
+<P><IMG SRC="figures/fig02-02.gif" ALT="[IMAGE]" NOSAVE HEIGHT=190 WIDTH=640>
+<P><B>Figure 2-2 : </B>Valid and Invalid Polygons
+<BR>&nbsp;
+<BR>&nbsp;
+<P>For many applications, you need nonsimple polygons, nonconvex polygons,
+or polygons with holes. Since all such polygons can be formed from unions
+of simple convex polygons, some routines to describe more complex objects
+are provided in the GLU. These routines take complex descriptions and <I>tessellate</I>
+them, or break them down into groups of the simpler OpenGL polygons that
+can then be rendered. (See Appendix C for more information about the tessellation
+routines.) The reason for OpenGL's restrictions on valid polygon types
+is that it's simpler to provide fast polygon-rendering hardware for that
+restricted class of polygons.
+<P>Since OpenGL vertices are always three-dimensional, the points forming
+the boundary of a particular polygon don't necessarily lie on the same
+plane in space. (Of course, they do in many cases - if all the <I>z</I>
+coordinates are zero, for example, or if the polygon is a triangle.) If
+a polygon's vertices don't lie in the same plane, then after various rotations
+in space, changes in the viewpoint, and projection onto the display screen,
+the points might no longer form a simple convex polygon. For example, imagine
+a four-point quadrilateral where the points are slightly out of plane,
+and look at it almost edge-on. You can get a nonsimple polygon that resembles
+a bow tie, as shown in Figure 2-3 , which isn't guaranteed to render correctly.
+This situation isn't all that unusual if you approximate surfaces by quadrilaterals
+made of points lying on the true surface. You can always avoid the problem
+by using triangles, since any three points always lie on a plane.
+<P><IMG SRC="figures/ch02-5.gif" ALT="[IMAGE]" NOSAVE HEIGHT=106 WIDTH=509>
+<P><B>Figure 2-3 : </B>Nonplanar Polygon Transformed to Nonsimple Polygon
+<BR>&nbsp;
+<BR>&nbsp;
+<H4>
+Rectangles</H4>
+Since rectangles are so common in graphics applications, OpenGL provides
+a filled-rectangle drawing primitive, <B>glRect*()</B>. You can draw a
+rectangle as a polygon, as described in "OpenGL Geometric Drawing Primitives,"
+but your particular implementation of OpenGL might have optimized <B>glRect*()</B>
+for rectangles.void <B>glRect</B>{sifd}(<B>TYPE</B><I>x1</I>,
+<B>TYPE</B><I>y1</I>,
+<B>TYPE</B><I>x2</I>, <B>TYPE</B><I>y2</I>);
+<BR>void <B>glRect</B>{sifd}<B>v</B>(<B>TYPE</B><I>*v1</I>, <B>TYPE</B><I>*v2</I>);
+<P>Draws the rectangle defined by the corner points (<I>x1, y1</I>) and
+(<I>x2, y2</I>). The rectangle lies in the plane <I>z</I>=0 and has sides
+parallel to the <I>x</I>- and <I>y</I>-axes. If the vector form of the
+function is used, the corners are given by two pointers to arrays, each
+of which contains an (<I>x, y</I>) pair.
+<P>Note that although the rectangle begins with a particular orientation
+in three-dimensional space (in the <I>x-y</I> plane and parallel to the
+axes), you can change this by applying rotations or other transformations.
+See Chapter 3 for information about how to do this.
+<H4>
+Curves</H4>
+Any smoothly curved line or surface can be approximated - to any arbitrary
+degree of accuracy - by short line segments or small polygonal regions.
+Thus, subdividing curved lines and surfaces sufficiently and then approximating
+them with straight line segments or flat polygons makes them appear curved
+(see Figure 2-4 ). If you're skeptical that this really works, imagine
+subdividing until each line segment or polygon is so tiny that it's smaller
+than a pixel on the screen.
+<P><IMG SRC="figures/ch02-6.gif" ALT="[IMAGE]" NOSAVE HEIGHT=102 WIDTH=509>
+<P><B>Figure 2-4 : </B>Approximating Curves
+<BR>&nbsp;
+<BR>&nbsp;
+<P>Even though curves aren't geometric primitives, OpenGL does provide
+some direct support for drawing them. See Chapter 11 for information about
+how to draw curves and curved surfaces.
+<H3>
+Specifying Vertices</H3>
+With OpenGL, all geometric objects are ultimately described as an ordered
+set of vertices. You use the <B>glVertex*()</B> command to specify a vertex.
+void <B>glVertex</B>{234}{sifd}[v](<B>TYPEcoords</B>);
+<P>Specifies a vertex for use in describing a geometric object. You can
+supply up to four coordinates (<I>x, y, z, w</I>) for a particular vertex
+or as few as two (<I>x, y</I>) by selecting the appropriate version of
+the command. If you use a version that doesn't explicitly specify <I>z</I>
+or <I>w</I>, <I>z</I> is understood to be 0 and <I>w</I> is understood
+to be 1. Calls to <B>glVertex*()</B> should be executed between a <B>glBegin()</B>
+and <B>glEnd()</B> pair.
+<P>Here are some examples of using <B>glVertex*()</B>:
+<PRE>glVertex2s(2, 3);&nbsp;
+glVertex3d(0.0, 0.0, 3.1415926535898);&nbsp;
+glVertex4f(2.3, 1.0, -2.2, 2.0);&nbsp;
+
+GLdouble dvect[3] = {5.0, 9.0, 1992.0};
+glVertex3dv(dvect);</PRE>
+The first example represents a vertex with three-dimensional coordinates
+(2, 3, 0). (Remember that if it isn't specified, the <I>z</I> coordinate
+is understood to be 0.) The coordinates in the second example are (0.0,
+0.0, 3.1415926535898) (double-precision floating-point numbers). The third
+example represents the vertex with three-dimensional coordinates (1.15,
+0.5, -1.1). (Remember that the <I>x, y</I>, and <I>z</I> coordinates are
+eventually divided by the <I>w</I> coordinate.) In the final example, <I>dvect</I>
+is a pointer to an array of three double-precision floating-point numbers.
+<P>On some machines, the vector form of <B>glVertex*()</B> is more efficient,
+since only a single parameter needs to be passed to the graphics subsystem,
+and special hardware might be able to send a whole series of coordinates
+in a single batch. If your machine is like this, it's to your advantage
+to arrange your data so that the vertex coordinates are packed sequentially
+in memory.
+<H3>
+OpenGL Geometric Drawing Primitives</H3>
+Now that you've seen how to specify vertices, you still need to know how
+to tell OpenGL to create a set of points, a line, or a polygon from those
+vertices. To do this, you bracket each set of vertices between a call to
+<B>glBegin()</B>
+and a call to <B>glEnd()</B>. The argument passed to <B>glBegin()</B> determines
+what sort of geometric primitive is constructed from the vertices. For
+example, the following code specifies the vertices for the polygon shown
+in Figure 2-5 :
+<PRE>glBegin(GL_POLYGON);
+&nbsp;&nbsp; glVertex2f(0.0, 0.0);
+&nbsp;&nbsp; glVertex2f(0.0, 3.0);
+&nbsp;&nbsp; glVertex2f(3.0, 3.0);
+&nbsp;&nbsp; glVertex2f(4.0, 1.5);
+&nbsp;&nbsp; glVertex2f(3.0, 0.0);
+glEnd();</PRE>
+<IMG SRC="figures/fig2-5.gif" ALT="[IMAGE]" NOSAVE HEIGHT=104 WIDTH=243>
+<P><B>Figure 2-5 : </B>Drawing a Polygon or a Set of Points
+<BR>&nbsp;
+<BR>&nbsp;
+<P>If you had used GL_POINTS instead of GL_POLYGON, the primitive would
+have been simply the five points shown in Figure 2-5 . Table 2-2 in the
+following function summary for <B>glBegin()</B> lists the ten possible
+arguments and the corresponding type of primitive.void <B>glBegin</B>(GLenum
+<I>mode</I>);
+<P>Marks the beginning of a vertex list that describes a geometric primitive.
+The type of primitive is indicated by <I>mode</I>, which can be any of
+the values shown in Table 2-2 .
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 2-2 : </B>Geometric Primitive Names and Meanings</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Value</TH>
+
+<TH>Meaning</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POINTS</TD>
+
+<TD>individual points</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINES</TD>
+
+<TD>pairs of vertices interpreted as individual line segments</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_POLYGON</TD>
+
+<TD>boundary of a simple, convex polygon</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TRIANGLES</TD>
+
+<TD>triples of vertices interpreted as triangles</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_QUADS</TD>
+
+<TD>quadruples of vertices interpreted as four-sided polygons</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_STRIP</TD>
+
+<TD>series of connected line segments</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_LINE_LOOP</TD>
+
+<TD>same as above, with a segment added between last and first vertices</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TRIANGLE_STRIP</TD>
+
+<TD>linked strip of triangles</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_TRIANGLE_FAN</TD>
+
+<TD>linked fan of triangles</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>GL_QUAD_STRIP</TD>
+
+<TD>linked strip of quadrilaterals</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>void <B>glEnd</B>(void);
+<P>Marks the end of a vertex list.
+<P>Figure 2-6 shows examples of all the geometric primitives listed in
+Table 2-2 . The paragraphs that follow the figure give precise descriptions
+of the pixels that are drawn for each of the objects. Note that in addition
+to points, several types of lines and polygons are defined. Obviously,
+you can find many ways to draw the same primitive. The method you choose
+depends on your vertex data.
+<P><IMG SRC="figures/fig2-6.gif" ALT="[IMAGE]" NOSAVE HEIGHT=502 WIDTH=617>
+<P><B>Figure 2-6 : </B>Geometric Primitive Types
+<BR>&nbsp;
+<BR>&nbsp;
+<P>As you read the following descriptions, assume that <I>n</I> vertices
+(v0, v1, v2, ... , vn-1) are described between a <B>glBegin()</B> and <B>glEnd()</B>
+pair.
+<DL>
+<DT>
+GL_POINTS</DT>
+
+<BR>Draws a point at each of the <I>n</I> vertices.
+<BR>GL_LINES
+<BR>Draws a series of unconnected line segments. Segments are drawn between
+v0 and v1, between v2 and v3, and so on. If <I>n</I> is odd, the last segment
+is drawn between vn-3 and vn-2, and vn-1 is ignored.
+<BR>GL_POLYGON
+<BR>Draws a polygon using the points v0, ... , vn-1 as vertices. <I>n</I>
+must be at least 3, or nothing is drawn. In addition, the polygon specified
+must not intersect itself and must be convex. If the vertices don't satisfy
+these conditions, the results are unpredictable.
+<BR>GL_TRIANGLES
+<BR>Draws a series of triangles (three-sided polygons) using vertices v0,
+v1, v2, then v3, v4, v5, and so on. If <I>n</I> isn't an exact multiple
+of 3, the final one or two vertices are ignored.
+<BR>GL_LINE_STRIP
+<BR>Draws a line segment from v0 to v1, then from v1 to v2, and so on,
+finally drawing the segment from vn-2 to vn-1. Thus, a total of <I>n</I>-<I>1</I>
+line
+segments are drawn. Nothing is drawn unless <I>n</I> is larger than 1.
+There are no restrictions on the vertices describing a line strip (or a
+line loop); the lines can intersect arbitrarily.
+<BR>GL_LINE_LOOP
+<BR>Same as GL_LINE_STRIP, except that a final line segment is drawn from
+vn-1 to v0, completing a loop.
+<BR>GL_QUADS
+<BR>Draws a series of quadrilaterals (four-sided polygons) using vertices
+v0, v1, v2, v3, then v4, v5, v6, v7, and so on. If <I>n</I> isn't a multiple
+of 4, the final one, two, or three vertices are ignored.
+<BR>GL_QUAD_STRIP
+<BR>Draws a series of quadrilaterals (four-sided polygons) beginning with
+v0, v1, v3, v2, then v2, v3, v5, v4, then v4, v5, v7, v6, and so on. See
+Figure
+2-6 . <I>n</I> must be at least 4 before anything is drawn, and if <I>n</I>
+is odd, the final vertex is ignored.
+<BR>GL_TRIANGLE_STRIP
+<BR>Draws a series of triangles (three-sided polygons) using vertices v0,
+v1, v2, then v2, v1, v3 (note the order), then v2, v3, v4, and so on. The
+ordering is to ensure that the triangles are all drawn with the same orientation
+so that the strip can correctly form part of a surface. Figure 2-6 should
+make the reason for the ordering obvious. <I>n</I> must be at least 3 for
+anything to be drawn.
+<BR>GL_TRIANGLE_FAN
+<BR>Same as GL_TRIANGLE_STRIP, except that the vertices are v0, v1, v2,
+then v0, v2, v3, then v0, v3, v4, and so on. Look at Figure 2-6 .</DL>
+
+<H4>
+Restrictions on Using glBegin() and glEnd()</H4>
+The most important information about vertices is their coordinates, which
+are specified by the <B>glVertex*()</B> command. You can also supply additional
+vertex-specific data for each vertex - a color, a normal vector, texture
+coordinates, or any combination of these - using special commands. In addition,
+a few other commands are valid between a <B>glBegin()</B> and <B>glEnd()</B>
+pair. Table 2-3 contains a complete list of such valid commands.
+<TABLE BORDER CELLPADDING=10 >
+<CAPTION ALIGN=TOP><B>Table 2-3 : </B>Valid Commands between glBegin()
+and glEnd()</CAPTION>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TH>Command</TH>
+
+<TH>Purpose of Command</TH>
+
+<TH>Reference</TH>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>glVertex*()</TD>
+
+<TD>set vertex coordinates</TD>
+
+<TD>Chapter 2</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>glColor*()</TD>
+
+<TD>set current color</TD>
+
+<TD>Chapter 5</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>glIndex*()</TD>
+
+<TD>set current color index</TD>
+
+<TD>Chapter 5</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>glNormal*()</TD>
+
+<TD>set normal vector coordinates</TD>
+
+<TD>Chapter 2</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>glEvalCoord*()</TD>
+
+<TD>generate coordinates</TD>
+
+<TD>Chapter 11</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>glCallList(), glCallLists()</TD>
+
+<TD>execute display list(s)</TD>
+
+<TD>Chapter 4</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>glTexCoord*()</TD>
+
+<TD>set texture coordinates</TD>
+
+<TD>Chapter 9</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>glEdgeFlag*()</TD>
+
+<TD>control drawing of edges</TD>
+
+<TD>Chapter 2</TD>
+</TR>
+
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD>glMaterial*()</TD>
+
+<TD>set material properties</TD>
+
+<TD>Chapter 6</TD>
+</TR>
+</TABLE>
+
+<BR>&nbsp;
+<P>No other OpenGL commands are valid between a <B>glBegin()</B> and <B>glEnd()</B>
+pair, and making any other OpenGL call generates an error. Note, however,
+that only OpenGL commands are restricted; you can certainly include other
+programming-language constructs. For example, the following code draws
+an outlined circle:
+<PRE>#define PI 3.1415926535897;&nbsp;
+GLint circle_points = 100;&nbsp;
+glBegin(GL_LINE_LOOP);&nbsp;
+for (i = 0; i &lt; circle_points; i++) {&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; angle = 2*PI*i/circle_points;&nbsp;
+&nbsp;&nbsp; glVertex2f(cos(angle), sin(angle));&nbsp;
+}&nbsp;
+glEnd();</PRE>
+This example isn't the most efficient way to draw a circle, especially
+if you intend to do it repeatedly. The graphics commands used are typically
+very fast, but this code calculates an angle and calls the <B>sin()</B>
+and <B>cos()</B> routines for each vertex; in addition, there's the loop
+overhead. If you need to draw lots of circles, calculate the coordinates
+of the vertices once and save them in an array, create a display list (see
+Chapter
+4 ,) or use a GLU routine (see Appendix C .)
+<P>Unless they are being compiled into a display list, all <B>glVertex*()</B>
+commands should appear between some <B>glBegin()</B> and <B>glEnd()</B>
+combination. (If they appear elsewhere, they don't accomplish anything.)
+If they appear in a display list, they are executed only if they appear
+between a <B>glBegin()</B> and a <B>glEnd()</B>.
+<P>Although many commands are allowed between <B>glBegin()</B> and <B>glEnd()</B>,
+vertices are generated only when a <B>glVertex*()</B> command is issued.
+At the moment <B>glVertex*()</B> is called, OpenGL assigns the resulting
+vertex the current color, texture coordinates, normal vector information,
+and so on. To see this, look at the following code sequence. The first
+point is drawn in red, and the second and third ones in blue, despite the
+extra color commands:
+<PRE>glBegin(GL_POINTS);&nbsp;
+&nbsp;&nbsp; glColor3f(0.0, 1.0, 0.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* green */&nbsp;
+&nbsp;&nbsp; glColor3f(1.0, 0.0, 0.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* red */&nbsp;
+&nbsp;&nbsp; glVertex(...);&nbsp;
+&nbsp;&nbsp; glColor3f(1.0, 1.0, 0.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* yellow */&nbsp;
+&nbsp;&nbsp; glColor3f(0.0, 0.0, 1.0);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* blue */&nbsp;
+&nbsp;&nbsp; glVertex(...);&nbsp;
+&nbsp;&nbsp; glVertex(...);&nbsp;
+glEnd();</PRE>
+You can use any combination of the twenty-four versions of the <B>glVertex*()</B>
+command between <B>glBegin()</B> and <B>glEnd()</B>, although in real applications
+all the calls in any particular instance tend to be of the same form.
+<P>
+<HR>
+<H2>
+Displaying Points, Lines, and Polygons</H2>
+By default, a point is drawn as a single pixel on the screen, a line is
+drawn solid and one pixel wide, and polygons are drawn solidly filled in.
+The following paragraphs discuss the details of how to change these default
+display modes.
+<H3>
+Point Details</H3>
+To control the size of a rendered point, use <B>glPointSize()</B> and supply
+the desired size in pixels as the argument. void <B>glPointSize</B>(GLfloat
+<I>size</I>);
+<P>Sets the width in pixels for rendered points; <I>size</I> must be greater
+than 0.0 and by default is 1.0.
+<P>The actual collection of pixels on the screen that are drawn for various
+point widths depends on whether antialiasing is enabled. (Antialiasing
+is a technique for smoothing points and lines as they're rendered. This
+topic is covered in detail in "Antialiasing." ) If antialiasing is disabled
+(the default), fractional widths are rounded to integer widths, and a screen-aligned
+square region of pixels is drawn. Thus, if the width is 1.0, the square
+is one pixel by one pixel; if the width is 2.0, the square is two pixels
+by two pixels, and so on.
+<P>With antialiasing enabled, a circular group of pixels is drawn, and
+the pixels on the boundaries are typically drawn at less than full intensity
+to give the edge a smoother appearance. In this mode, nonintegral widths
+aren't rounded.
+<P>Most OpenGL implementations support very large point sizes. A particular
+implementation, however, might limit the size of nonantialiased points
+to its maximum antialiased point size, rounded to the nearest integer value.
+You can obtain this floating-point value by using GL_POINT_SIZE_RANGE with
+<B>glGetFloatv()</B>.
+<H3>
+Line Details</H3>
+With OpenGL, you can specify lines with different widths and lines that
+are <I>stippled</I> in various ways - dotted, dashed, drawn with alternating
+dots and dashes, and so on.
+<H4>
+Wide Lines</H4>
+void <B>glLineWidth</B>(GLfloat <I>width</I>);
+<P>Sets the width in pixels for rendered lines; <I>width</I> must be greater
+than 0.0 and by default is 1.0.
+<P>The actual rendering of lines is affected by the antialiasing mode,
+in the same way as for points. (See "Antialiasing." ) Without antialiasing,
+widths of 1, 2, and 3 draw lines one, two, and three pixels wide. With
+antialiasing enabled, nonintegral line widths are possible, and pixels
+on the boundaries are typically partially filled. As with point sizes,
+a particular OpenGL implementation might limit the width of nonantialiased
+lines to its maximum antialiased line width, rounded to the nearest integer
+value. You can obtain this floating-point value by using GL_LINE_WIDTH_RANGE
+with <B>glGetFloatv()</B>.
+<P>Keep in mind that by default lines are one pixel wide, so they appear
+wider on lower-resolution screens. For computer displays, this isn't typically
+an issue, but if you're using OpenGL to render to a high-resolution plotter,
+one-pixel lines might be nearly invisible. To obtain resolution-independent
+line widths, you need to take into account the physical dimensions of pixels.
+<P><B>Advanced</B>
+<P>With nonantialiased wide lines, the line width isn't measured perpendicular
+to the line. Instead, it's measured in the <I>y</I> direction if the absolute
+value of the slope is less than 1.0; otherwise, it's measured in the <I>x</I>
+direction. The rendering of an antialiased line is exactly equivalent to
+the rendering of a filled rectangle of the given width, centered on the
+exact line. See "Polygon Details," for a discussion of the rendering of
+filled polygonal regions.
+<H4>
+Stippled Lines</H4>
+To make stippled (dotted or dashed) lines, you use the command <B>glLineStipple()</B>
+to define the stipple pattern, and then you enable line stippling with
+<B>glEnable()</B>:
+<PRE>glLineStipple(1, 0x3F07);
+glEnable(GL_LINE_STIPPLE);</PRE>
+void <B>glLineStipple</B>(GLint <I>factor</I>, GLushort <I>pattern</I>);
+<P>Sets the current stippling pattern for lines. The <I>pattern</I> argument
+is a 16-bit series of 0s and 1s, and it's repeated as necessary to stipple
+a given line. A 1 indicates that drawing occurs, and 0 that it does not,
+on a pixel-by-pixel basis, beginning with the low-order bits of the pattern.
+The pattern can be stretched out by using <I>factor</I>, which multiplies
+each subseries of consecutive 1s and 0s. Thus, if three consecutive 1s
+appear in the pattern, they're stretched to six if <I>factor</I> is 2.
+<I>factor</I>
+is clamped to lie between 1 and 255. Line stippling must be enabled by
+passing GL_LINE_STIPPLE to <B>glEnable()</B>; it's disabled by passing
+the same argument to <B>glDisable()</B>.
+<P>With the preceding example and the pattern 0x3F07 (which translates
+to 0011111100000111 in binary), a line would be drawn with 3 pixels on,
+then 5 off, 6 on, and 2 off. (If this seems backward, remember that the
+low-order bits are used first.) If <I>factor</I> had been 2, the pattern
+would have been elongated: 6 pixels on, 10 off, 12 on, and 4 off. Figure
+2-7 shows lines drawn with different patterns and repeat factors. If you
+don't enable line stippling, drawing proceeds as if <I>pattern</I> were
+0xFFFF and <I>factor</I> 1. (Use <B>glDisable()</B> with GL_LINE_STIPPLE
+to disable stippling.) Note that stippling can be used in combination with
+wide lines to produce wide stippled lines.
+<P><IMG SRC="figures/fig2-7.gif" ALT="[IMAGE]" NOSAVE HEIGHT=172 WIDTH=519>
+<P><B>Figure 2-7 : </B>Stippled Lines
+<BR>&nbsp;
+<BR>&nbsp;
+<P>One way to think of the stippling is that as the line is being drawn,
+the pattern is shifted by one bit each time a pixel is drawn (or <I>factor</I>
+pixels are drawn, if <I>factor</I> isn't 1). When a series of connected
+line segments is drawn between a single <B>glBegin()</B> and <B>glEnd()</B>,
+the pattern continues to shift as one segment turns into the next. This
+way, a stippling pattern continues across a series of connected line segments.
+When <B>glEnd()</B> is executed, the pattern is reset, and - if more lines
+are drawn before stippling is disabled - the stippling restarts at the
+beginning of the pattern. If you're drawing lines with GL_LINES, the pattern
+resets for each independent line.
+<P>Example 2-1 illustrates the results of drawing with a couple of different
+stipple patterns and line widths. It also illustrates what happens if the
+lines are drawn as a series of individual segments instead of a single
+connected line strip. The results of running the program appear in Figure
+2-8 .
+<P><IMG SRC="figures/lines.gif" ALT="[IMAGE]" NOSAVE HEIGHT=138 WIDTH=379>
+<P><B>Figure 2-8 : </B>Wide Stippled Lines
+<BR>&nbsp;
+<BR>&nbsp;
+<P><B>Example 2-1 : </B>Using Line Stipple Patterns: lines.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include "aux.h"
+
+#define&nbsp;&nbsp; drawOneLine(x1,y1,x2,y2) glBegin(GL_LINES); \
+&nbsp;&nbsp; glVertex2f ((x1),(y1)); glVertex2f ((x2),(y2)); glEnd();
+
+void myinit (void) {
+&nbsp;&nbsp;&nbsp; /*&nbsp; background to be cleared to black&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp; glClearColor (0.0, 0.0, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp; glShadeModel (GL_FLAT);
+}
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; int i;
+
+&nbsp;&nbsp;&nbsp; glClear (GL_COLOR_BUFFER_BIT);
+/*&nbsp; draw all lines in white&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp; glColor3f (1.0, 1.0, 1.0);
+
+
+/*&nbsp; in 1st row, 3 lines, each with a different stipple&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp; glEnable (GL_LINE_STIPPLE);
+&nbsp;&nbsp;&nbsp; glLineStipple (1, 0x0101);&nbsp;&nbsp; /*&nbsp; dotted&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp; drawOneLine (50.0, 125.0, 150.0, 125.0);
+&nbsp;&nbsp;&nbsp; glLineStipple (1, 0x00FF);&nbsp;&nbsp; /*&nbsp; dashed&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp; drawOneLine (150.0, 125.0, 250.0, 125.0);
+&nbsp;&nbsp;&nbsp; glLineStipple (1, 0x1C47);&nbsp;&nbsp; /*&nbsp; dash/dot/dash&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp; drawOneLine (250.0, 125.0, 350.0, 125.0);
+
+/*&nbsp; in 2nd row, 3 wide lines, each with different stipple */
+&nbsp;&nbsp;&nbsp; glLineWidth (5.0);
+&nbsp;&nbsp;&nbsp; glLineStipple (1, 0x0101);
+&nbsp;&nbsp;&nbsp; drawOneLine (50.0, 100.0, 150.0, 100.0);
+&nbsp;&nbsp;&nbsp; glLineStipple (1, 0x00FF);
+&nbsp;&nbsp;&nbsp; drawOneLine (150.0, 100.0, 250.0, 100.0);
+&nbsp;&nbsp;&nbsp; glLineStipple (1, 0x1C47);
+&nbsp;&nbsp;&nbsp; drawOneLine (250.0, 100.0, 350.0, 100.0);
+&nbsp;&nbsp;&nbsp; glLineWidth (1.0);
+
+/*&nbsp; in 3rd row, 6 lines, with dash/dot/dash stipple,&nbsp;&nbsp; */
+/*&nbsp; as part of a single connected line strip&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp; glLineStipple (1, 0x1C47);
+&nbsp;&nbsp;&nbsp; glBegin (GL_LINE_STRIP);
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; 7; i++)
+&nbsp;&nbsp; glVertex2f (50.0 + ((GLfloat) i * 50.0), 75.0);
+&nbsp;&nbsp;&nbsp; glEnd ();
+
+/*&nbsp; in 4th row, 6 independent lines,&nbsp;&nbsp; */
+/*&nbsp; with dash/dot/dash stipple&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; 6; i++) {
+&nbsp;&nbsp; drawOneLine (50.0 + ((GLfloat) i * 50.0),&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 50.0, 50.0 + ((GLfloat)(i+1) * 50.0), 50.0);
+&nbsp;&nbsp;&nbsp; }
+
+/*&nbsp; in 5th row, 1 line, with dash/dot/dash stipple&nbsp;&nbsp; */
+/*&nbsp; and repeat factor of 5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */
+&nbsp;&nbsp;&nbsp; glLineStipple (5, 0x1C47);
+&nbsp;&nbsp;&nbsp; drawOneLine (50.0, 25.0, 350.0, 25.0);
+&nbsp;&nbsp;&nbsp; glFlush ();
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode (AUX_SINGLE | AUX_RGBA);
+&nbsp;&nbsp;&nbsp; auxInitPosition (0, 0, 400, 150);
+&nbsp;&nbsp;&nbsp; auxInitWindow (argv[0]);
+&nbsp;&nbsp;&nbsp; myinit ();
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+
+<H3>
+Polygon Details</H3>
+Polygons are typically drawn by filling in all the pixels enclosed within
+the boundary, but you can also draw them as outlined polygons, or simply
+as points at the vertices. A filled polygon might be solidly filled, or
+stippled with a certain pattern. Although the exact details are omitted
+here, polygons are drawn in such a way that if adjacent polygons share
+an edge or vertex, the pixels making up the edge or vertex are drawn exactly
+once - they're included in only one of the polygons. This is done so that
+partially transparent polygons don't have their edges drawn twice, which
+would make those edges appear darker (or brighter, depending on what color
+you're drawing with). Note that it might result in narrow polygons having
+no filled pixels in one or more rows or columns of pixels. Antialiasing
+polygons is more complicated than for points and lines; see "Antialiasing,"
+for details.
+<H4>
+Polygons as Points, Outlines, or Solids</H4>
+A polygon has two sides - front and back - and might be rendered differently
+depending on which side is facing the viewer. This allows you to have cutaway
+views of solid objects in which there is an obvious distinction between
+the parts that are inside and those that are outside. By default, both
+front and back faces are drawn in the same way. To change this, or to draw
+only outlines or vertices, use <B>glPolygonMode()</B>. void <B>glPolygonMode</B>(GLenum
+<B>face</B>,
+GLenum <B>mode</B>);
+<P>Controls the drawing mode for a polygon's front and back faces. The
+parameter <I>face</I> can be GL_FRONT_AND_BACK, GL_FRONT, or GL_BACK; <I>mode</I>
+can be GL_POINT, GL_LINE, or GL_FILL to indicate whether the polygon should
+be drawn as points, outlined, or filled. By default, both the front and
+back faces are drawn filled.
+<P>For example, you can have the front faces filled and the back faces
+outlined with two calls to this routine:
+<PRE>glPolygonMode(GL_FRONT, GL_FILL);
+glPolygonMode(GL_BACK, GL_LINE);</PRE>
+See the next section for more information about how to control which faces
+are considered front-facing and which back-facing.
+<H4>
+Reversing and Culling Polygon Faces</H4>
+By convention, polygons whose vertices appear in counterclockwise order
+on the screen are called front-facing. You can construct the surface of
+any "reasonable" solid - a mathematician would call such a surface an orientable
+manifold (spheres, donuts, and teapots are orientable; Klein bottles and
+Möbius strips aren't) - from polygons of consistent orientation. In other
+words, you can use all clockwise polygons, or all counterclockwise polygons.
+(This is essentially the mathematical definition of <I>orientable</I>.)
+<P>Suppose you've consistently described a model of an orientable surface
+but that you happen to have the clockwise orientation on the outside. You
+can swap what OpenGL considers the back face by using the function <B>glFrontFace()</B>,
+supplying the desired orientation for front-facing polygons.void <B>glFrontFace</B>(GLenum
+<I>mode</I>);
+<P>Controls how front-facing polygons are determined. By default, <I>mode</I>
+is GL_CCW, which corresponds to a counterclockwise orientation of the ordered
+vertices of a projected polygon in window coordinates. If <I>mode</I> is
+GL_CW, faces with a clockwise orientation are considered front-facing.
+<P><B>Advanced</B>
+<P>In more technical terms, the decision of whether a face of a polygon
+is front- or back-facing depends on the sign of the polygon's area computed
+in window coordinates. One way to compute this area is
+<P><IMG SRC="figures/eq201.gif" ALT="[IMAGE]" NOSAVE HEIGHT=70 WIDTH=225>
+<P>where <I>x</I>i and <I>y</I>i are the <I>x</I> and <I>y</I> window coordinates
+of the <I>i</I>th vertex of the <I>n</I>-vertex polygon and:
+<P><IMG SRC="figures/eq202.gif" ALT="[IMAGE]" NOSAVE HEIGHT=29 WIDTH=156>
+<P>Assuming that GL_CCW has been specified, if <I>a</I>>0, the polygon
+corresponding to that vertex is considered to be front-facing; otherwise,
+it's back-facing. If GL_CW is specified and if <I>a</I>&lt;0, then the
+corresponding polygon is front-facing; otherwise, it's back-facing.
+<P>In a completely enclosed surface constructed from polygons with a consistent
+orientation, none of the back-facing polygons are ever visible - they're
+always obscured by the front-facing polygons. In this situation, you can
+maximize drawing speed by having OpenGL discard polygons as soon as it
+determines that they're back-facing. Similarly, if you are inside the object,
+only back-facing polygons are visible. To instruct OpenGL to discard front-
+or back-facing polygons, use the command <B>glCullFace()</B> and enable
+culling with <B>glEnable()</B>. void <B>glCullFace</B>(GLenum <I>mode</I>);
+<P>Indicates which polygons should be discarded (culled) before they're
+converted to screen coordinates. The mode is either GL_FRONT, GL_BACK,
+or GL_FRONT_AND_BACK to indicate front-facing, back-facing, or all polygons.
+To take effect, culling must be enabled using <B>glEnable()</B> with GL_CULL_FACE;
+it can be disabled with <B>glDisable()</B> and the same argument.
+<H4>
+Stippling Polygons</H4>
+By default, filled polygons are drawn with a solid pattern. They can also
+be filled with a 32-bit by 32-bit window-aligned stipple pattern, which
+you specify with <B>glPolygonStipple()</B>. void <B>glPolygonStipple</B>(const
+GLubyte *<I>mask</I>);
+<P>Defines the current stipple pattern for filled polygons. The argument
+<I>mask</I>
+is a pointer to a 32 × 32 bitmap that's interpreted as a mask of 0s and
+1s. Where a 1 appears, the corresponding pixel in the polygon is drawn,
+and where a 0 appears, nothing is drawn. Figure 2-9 shows how a stipple
+pattern is constructed from the characters in <I>mask</I>. Polygon stippling
+is enabled and disabled by using <B>glEnable()</B> and <B>glDisable()</B>
+with GL_POLYGON_STIPPLE as the argument. The interpretation of the <B>mask</B>
+data is affected by the <B>glPixelStore*()</B> GL_UNPACK* modes. See "Controlling
+Pixel-Storage Modes."
+<P><IMG SRC="figures/fig2-9.gif" ALT="[IMAGE]" NOSAVE HEIGHT=918 WIDTH=647>
+<P><B>Figure 2-9 : </B>Constructing a Polygon Stipple Pattern
+<BR>&nbsp;
+<BR>&nbsp;
+<P>In addition to defining the current polygon stippling pattern, you must
+enable stippling:
+<PRE>glEnable(GL_POLYGON_STIPPLE);</PRE>
+Use <B>glDisable()</B> with the same argument to disable polygon stippling.
+<P>Figure 2-10 shows the results of polygons drawn unstippled and then
+with two different stippling patterns. The program is shown in Example
+2-2 . The reversal of white to black (from Figure 2-9 to Figure 2-10 )
+occurs because the program draws in white over a black background, using
+the pattern in Figure 2-9 as a stencil.
+<P><IMG SRC="figures/polys.gif" ALT="[IMAGE]" NOSAVE HEIGHT=120 WIDTH=316>
+<P><B>Figure 2-10 : </B>Stippled Polygons
+<BR>&nbsp;
+<BR>&nbsp;
+<P><B>Example 2-2 : </B>Using Polygon Stipple Patterns: polys.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include "aux.h"
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; GLubyte fly[] = {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x03, 0x80, 0x01, 0xC0, 0x06, 0xC0, 0x03, 0x60,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x04, 0x60, 0x06, 0x20, 0x04, 0x30, 0x0C, 0x20,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x04, 0x18, 0x18, 0x20, 0x04, 0x0C, 0x30, 0x20,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x04, 0x06, 0x60, 0x20, 0x44, 0x03, 0xC0, 0x22,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x44, 0x01, 0x80, 0x22, 0x44, 0x01, 0x80, 0x22,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x44, 0x01, 0x80, 0x22, 0x44, 0x01, 0x80, 0x22,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x44, 0x01, 0x80, 0x22, 0x44, 0x01, 0x80, 0x22,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x66, 0x01, 0x80, 0x66, 0x33, 0x01, 0x80, 0xCC,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x19, 0x81, 0x81, 0x98, 0x0C, 0xC1, 0x83, 0x30,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x07, 0xe1, 0x87, 0xe0, 0x03, 0x3f, 0xfc, 0xc0,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x03, 0x31, 0x8c, 0xc0, 0x03, 0x33, 0xcc, 0xc0,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x06, 0x64, 0x26, 0x60, 0x0c, 0xcc, 0x33, 0x30,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x18, 0xcc, 0x33, 0x18, 0x10, 0xc4, 0x23, 0x08,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x10, 0x63, 0xC6, 0x08, 0x10, 0x30, 0x0c, 0x08,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0x10, 0x18, 0x18, 0x08, 0x10, 0x00, 0x00, 0x08};
+
+&nbsp;&nbsp;&nbsp; GLubyte halftone[] = {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55};
+
+&nbsp;&nbsp;&nbsp; glClear (GL_COLOR_BUFFER_BIT);
+
+&nbsp;&nbsp; glColor3f (1.0, 1.0, 1.0);
+
+&nbsp;&nbsp;&nbsp; glRectf (25.0, 25.0, 125.0, 125.0);
+&nbsp;&nbsp;&nbsp; glEnable (GL_POLYGON_STIPPLE);
+&nbsp;&nbsp;&nbsp; glPolygonStipple (fly);
+&nbsp;&nbsp;&nbsp; glRectf (125.0, 25.0, 225.0, 125.0);
+&nbsp;&nbsp;&nbsp; glPolygonStipple (halftone);
+&nbsp;&nbsp;&nbsp; glRectf (225.0, 25.0, 325.0, 125.0);
+&nbsp;&nbsp;&nbsp; glDisable (GL_POLYGON_STIPPLE);
+
+&nbsp;&nbsp;&nbsp; glFlush ();
+}
+
+void myinit (void)&nbsp;
+{
+&nbsp;&nbsp;&nbsp; glClearColor (0.0, 0.0, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp; glShadeModel (GL_FLAT);&nbsp;&nbsp;&nbsp;&nbsp;
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode (AUX_SINGLE | AUX_RGBA);
+&nbsp;&nbsp;&nbsp; auxInitPosition (0, 0, 350, 150);
+&nbsp;&nbsp;&nbsp; auxInitWindow (argv[0]);
+&nbsp;&nbsp;&nbsp; myinit ();
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+As mentioned in "Display-List Design Philosophy," you might want to use
+display lists to store polygon stipple patterns to maximize efficiency.
+<H4>
+Marking Polygon Boundary Edges</H4>
+<B>Advanced</B>
+<P>OpenGL can render only convex polygons, but many nonconvex polygons
+arise in practice. To draw these nonconvex polygons, you typically subdivide
+them into convex polygons - usually triangles, as shown in Figure 2-11
+- and then draw the triangles. Unfortunately, if you decompose a general
+polygon into triangles and draw the triangles, you can't really use <B>glPolygonMode()</B>
+to draw the polygon's outline, since you get all the triangle outlines
+inside it. To solve this problem, you can tell OpenGL whether a particular
+vertex precedes a boundary edge; OpenGL keeps track of this information
+by passing along with each vertex a bit indicating whether that vertex
+is followed by a boundary edge. Then, when a polygon is drawn in GL_LINE
+mode, the nonboundary edges aren't drawn. In Figure 2-11 , the dashed lines
+represent added edges.
+<P><IMG SRC="figures/fig02-11.gif" ALT="[IMAGE]" NOSAVE HEIGHT=176 WIDTH=295>
+<P><B>Figure 2-11 : </B>Subdividing a Nonconvex Polygon
+<BR>&nbsp;
+<BR>&nbsp;
+<P>By default, all vertices are marked as preceding a boundary edge, but
+you can manually control the setting of the edge flag with the command
+<B>glEdgeFlag*()</B>.
+This command is used between <B>glBegin()</B> and
+<B>glEnd()</B> pairs,
+and it affects all the vertices specified after it until the next <B>glEdgeFlag()</B>
+call is made. It applies only to vertices specified for polygons, triangles,
+and quads, not to those specified for strips of triangles or quads. void
+<B>glEdgeFlag</B>(GLboolean <I>flag</I>);
+<BR>void <B>glEdgeFlagv</B>(const GLboolean *<B>flag</B>);
+<P>Indicates whether a vertex should be considered as initializing a boundary
+edge of a polygon. If <B>flag</B> is GL_TRUE, the edge flag is set to TRUE
+(the default), and any vertices created are considered to precede boundary
+edges until this function is called again with <B>flag</B> being 0.
+<P>As an example, Example 2-3 draws the outline shown in Figure 2-12 .
+<P><IMG SRC="figures/fig02-12.gif" ALT="[IMAGE]" NOSAVE HEIGHT=297 WIDTH=423>
+<P><B>Figure 2-12 : </B>An Outlined Polygon Drawn Using Edge Flags
+<BR>&nbsp;
+<BR>&nbsp;
+<P><B>Example 2-3 : </B>Marking Polygon Boundary Edges
+<PRE>glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+glBegin(GL_POLYGON);
+&nbsp;&nbsp;&nbsp; glEdgeFlag(GL_TRUE);
+&nbsp;&nbsp;&nbsp; glVertex3fv(V0);
+&nbsp;&nbsp;&nbsp; glEdgeFlag(GL_FALSE);
+&nbsp;&nbsp;&nbsp; glVertex3fv(V1);
+&nbsp;&nbsp;&nbsp; glEdgeFlag(GL_TRUE);
+&nbsp;&nbsp;&nbsp; glVertex3fv(V2);
+glEnd();</PRE>
+
+<HR>
+<H2>
+Normal Vectors</H2>
+A <I>normal vector</I> (or normal, for short) is a vector that points in
+a direction that's perpendicular to a surface. For a flat surface, one
+perpendicular direction suffices for every point on the surface, but for
+a general curved surface, the normal direction might be different at each
+point. With OpenGL, you can specify a normal for each vertex. Vertices
+might share the same normal, but you can't assign normals anywhere other
+than at the vertices.
+<P>An object's normal vectors define the orientation of its surface in
+space - in particular, its orientation relative to light sources. These
+vectors are used by OpenGL to determine how much light the object receives
+at its vertices. Lighting - a large topic by itself - is the subject of
+Chapter
+6 , and you might want to review the following information after you've
+read that chapter. Normal vectors are discussed briefly here because you
+generally define normal vectors for an object at the same time you define
+the object's geometry.
+<P>You use <B>glNormal*()</B> to set the current normal to the value of
+the argument passed in. Subsequent calls to <B>glVertex*()</B> cause the
+specified vertices to be assigned the current normal. Often, each vertex
+has a different normal, which necessitates a series of alternating calls
+like this:
+<PRE>glBegin (GL_POLYGON);
+&nbsp;&nbsp; glNormal3fv(n0);
+&nbsp;&nbsp; glVertex3fv(v0);
+&nbsp;&nbsp; glNormal3fv(n1);
+&nbsp;&nbsp; glVertex3fv(v1);
+&nbsp;&nbsp; glNormal3fv(n2);
+&nbsp;&nbsp; glVertex3fv(v2);
+&nbsp;&nbsp; glNormal3fv(n3);
+&nbsp;&nbsp; glVertex3fv(v3);
+glEnd();</PRE>
+void <B>glNormal3</B>{bsidf}(<I>TYPEnx</I>, <I>TYPEny</I>, <I>TYPEn</I>z);
+<BR>void <B>glNormal3</B>{bsidf}<B>v</B>(const <B>TYPE</B> *v);
+<P>Sets the current normal vector as specified by the arguments. The nonvector
+version (without the <B>v</B>) takes three arguments, which specify an
+(<I>nx, ny, nz</I>) vector that's taken to be the normal. Alternatively,
+you can use the vector version of this function (with the <B>v</B>) and
+supply a single array of three elements to specify the desired normal.
+The <B>b</B>, <B>s</B>, and <B>i</B> versions scale their parameter values
+linearly to the range [-1.0,1.0].
+<P>There's no magic to finding the normals for an object - most likely,
+you have to perform some calculations that might include taking derivatives
+- but there are several techniques and tricks you can use to achieve certain
+effects. Appendix F explains how to find normal vectors for surfaces. If
+you already know how to do this, if you can count on always being supplied
+with normal vectors, or if you don't want to use OpenGL's lighting facility,
+you don't need to read this appendix.
+<P>Note that at a given point on a surface, two vectors are perpendicular
+to the surface, and they point in opposite directions. By convention, the
+normal is the one that points to the outside of the surface being modeled.
+(If you get inside and outside reversed in your model, just change every
+normal vector from (<I>x, y, z</I>) to (-<I>x, </I>-<I>y, </I>-<I>z</I>)).
+<P>Also, keep in mind that since normal vectors indicate direction only,
+their length is mostly irrelevant. You can specify normals of any length,
+but eventually they have to be converted to having a length of 1 before
+lighting calculations are performed. (A vector that has a length of 1 is
+said to be of unit length, or normalized.) In general, then, you should
+supply normalized normal vectors. These vectors remain normalized as long
+as your model transformations include only rotations and translations.
+(Transformations are discussed in detail in Chapter 3 .) If you perform
+irregular transformations (such as scaling or multiplying by a shear matrix),
+or if you specify nonunit-length normals, then you should have OpenGL automatically
+normalize your normal vectors after the transformations. To do this, call
+<B>glEnable()</B> with GL_NORMALIZE as its argument. By default, automatic
+normalization is disabled. Note that in some implementations of OpenGL,
+automatic normalization requires additional calculations that might reduce
+the performance of your application.
+<P>
+<HR>
+<H2>
+Some Hints for Building Polygonal Models of Surfaces</H2>
+Following are some techniques that you might want to use as you build polygonal
+approximations of surfaces. You might want to review this section after
+you've read Chapter 6 on lighting and Chapter 4 on display lists. The lighting
+conditions affect how models look once they're drawn, and some of the following
+techniques are much more efficient when used in conjunction with display
+lists. As you read these techniques, keep in mind that when lighting calculations
+are enabled, normal vectors must be specified to get proper results.
+<P>Constructing polygonal approximations to surfaces is an art, and there
+is no substitute for experience. This section, however, lists a few pointers
+that might make it a bit easier to get started.
+<UL>Keep polygon orientations consistent. Make sure that when viewed from
+the outside, all the polygons on the surface are oriented in the same direction
+(all clockwise or all counterclockwise). Try to get this right the first
+time, since it's excruciatingly painful to fix the problem later.
+<BR>&nbsp;
+<P>When you subdivide a surface, watch out for any nontriangular polygons.
+The three vertices of a triangle are guaranteed to lie on a plane; any
+polygon with four or more vertices might not. Nonplanar polygons can be
+viewed from some orientation such that the edges cross each other, and
+OpenGL might not render such polygons correctly.
+<BR>&nbsp;
+<P>There's always a trade-off between the display speed and the quality
+of the image. If you subdivide a surface into a small number of polygons,
+it renders quickly but might have a jagged appearance; if you subdivide
+it into millions of tiny polygons, it probably looks good but might take
+a long time to render. Ideally, you can provide a parameter to the subdivision
+routines that indicates how fine a subdivision you want, and if the object
+is farther from the eye, you can use a coarser subdivision. Also, when
+you subdivide, use relatively large polygons where the surface is relatively
+flat, and small polygons in regions of high curvature.
+<BR>&nbsp;
+<P>For high-quality images, it's a good idea to subdivide more on the silhouette
+edges than in the interior. If the surface is to be rotated relative to
+the eye, this is tougher to do, since the silhouette edges keep moving.
+Silhouette edges occur where the normal vectors are perpendicular to the
+vector from the surface to the viewpoint - that is, when their vector dot
+product is zero. Your subdivision algorithm might choose to subdivide more
+if this dot product is near zero.
+<BR>&nbsp;
+<P>Try to avoid T-intersections in your models (see Figure 2-13 ). As shown,
+there's no guarantee that the line segments AB and BC lie on exactly the
+same pixels as the segment AC. Sometimes they do, and sometimes they don't,
+depending on the transformations and orientation. This can cause cracks
+to appear intermittently in the surface.</UL>
+<IMG SRC="figures/ch02-15.gif" ALT="[IMAGE]" NOSAVE HEIGHT=108 WIDTH=240>
+<P><B>Figure 2-13 : </B>Modifying an Undesirable T-intersection
+<BR>&nbsp;
+<BR>&nbsp;
+<UL>If you're constructing a closed surface, make sure to use exactly the
+same numbers for coordinates at the beginning and end of a closed loop,
+or you can get gaps and cracks due to numerical round-off. Here's a two-dimensional
+example of bad code:
+<PRE>/* don't use this code */
+
+&nbsp;&nbsp;&nbsp; #define PI 3.14159265&nbsp;
+&nbsp;&nbsp;&nbsp; #define EDGES 30&nbsp;
+
+&nbsp;&nbsp;&nbsp; /* draw a circle */&nbsp;
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; EDGES; i++) {&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glBegin(GL_LINE_STRIP);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(cos((2*PI*i)/EDGES), sin((2*PI*i)/EDGES);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(cos((2*PI*(i+1))/EDGES),&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sin((2*PI*(i+1))/EDGES);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEnd();&nbsp;
+&nbsp;&nbsp;&nbsp; }</PRE>
+The edges meet exactly only if your machine manages to calculate the sine
+and cosine of 0 and of (2*PI*EDGES/EDGES) and gets exactly the same values.
+If you trust the floating-point unit on your machine to do this right,
+the authors have a bridge they'd like to sell you.... To correct the code,
+make sure that when <B>i</B> == EDGES-1, you use 0 for the sine and cosine,
+not 2*PI*EDGES/EDGES.
+<BR>&nbsp;
+<P>Finally, note that unless tessellation is very fine, any change is likely
+to be visible. In some animations, these changes are more visually disturbing
+than the artifacts of undertessellation.</UL>
+
+<H3>
+An Example: Building an Icosahedron</H3>
+To illustrate some of the considerations that arise in approximating a
+surface, let's look at some example code sequences. This code concerns
+the vertices of a regular icosahedron (which is a Platonic solid composed
+of twenty faces that span twelve vertices, each face of which is an equilateral
+triangle). An icosahedron can be considered a rough approximation for a
+sphere. Example 2-4 defines the vertices and triangles making up an icosahedron
+and then draws the icosahedron.
+<P><B>Example 2-4 : </B>Drawing an Icosahedron
+<PRE>#define X .525731112119133606&nbsp;
+#define Z .850650808352039932
+
+static GLfloat vdata[12][3] = {&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; {-X, 0.0, Z}, {X, 0.0, Z}, {-X, 0.0, -Z}, {X, 0.0, -Z},&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; {0.0, Z, X}, {0.0, Z, -X}, {0.0, -Z, X}, {0.0, -Z, -X},&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; {Z, X, 0.0}, {-Z, X, 0.0}, {Z, -X, 0.0}, {-Z, -X, 0.0}&nbsp;
+};
+
+static GLint tindices[20][3] = {&nbsp;
+&nbsp;&nbsp; {0,4,1}, {0,9,4}, {9,5,4}, {4,5,8}, {4,8,1},&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; {8,10,1}, {8,3,10}, {5,3,8}, {5,2,3}, {2,7,3},&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; {7,10,3}, {7,6,10}, {7,11,6}, {11,0,6}, {0,1,6},&nbsp;
+&nbsp;&nbsp; {6,1,10}, {9,0,11}, {9,11,2}, {9,2,5}, {7,2,11} };
+
+for (i = 0; i &lt; 20; i++) {&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; /* color information here */&nbsp;
+&nbsp;&nbsp; glBegin(GL_TRIANGLE);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3fv(&amp;vdata[tindices[i][0]][0]);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3fv(&amp;vdata[tindices[i][1]][0]);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3fv(&amp;vdata[tindices[i][2]][0]);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; glEnd();&nbsp;
+}</PRE>
+The strange numbers <I>X</I> and <I>Z</I> are chosen so that the distance
+from the origin to any of the vertices of the icosahedron is 1.0. The coordinates
+of the twelve vertices are given in the array <I>vdata[][]</I>, where the
+zeroth vertex is {-<I>X, 0.0, Z</I>}, the first is {<I>X, 0.0, Z</I>},
+and so on. The array <I>tindices[][]</I> tells how to link the vertices
+to make triangles. For example, the first triangle is made from the zeroth,
+fourth, and first vertex. If you take the vertices for triangles in the
+order given, all the triangles have the same orientation.
+<P>The line that mentions color information should be replaced by a command
+that sets the color of the <B>i</B>th face. If no code appears here, all
+faces are drawn in the same color, and it'll be impossible to discern the
+three-dimensional quality of the object. An alternative to explicitly specifying
+colors is to define surface normals and use lighting, as described in the
+next section.
+<P>In all the examples described in this section, unless the surface is
+to be drawn only once, you should probably save the calculated vertex and
+normal coordinates so that the calculations don't need to be repeated each
+time that the surface is drawn. This can be done using your own data structures
+or by constructing display lists (see Chapter 4 .)
+<H4>
+Defining the Icosahedron's Normals</H4>
+If the icosahedron is to be lit, you need to supply the vector normal to
+the surface. With the flat surfaces of an icosahedron, all three vertices
+defining a surface have the same normal vector. Thus, the normal needs
+to be specified only once for each set of three vertices. The code in Example
+2-5 can replace the "color information here" line in Example 2-4 for drawing
+the icosahedron.
+<P><B>Example 2-5 : </B>Supplying Normals for an Icosahedron
+<PRE>GLfloat d1[3], d2[3], norm[3];&nbsp;&nbsp;&nbsp;&nbsp;
+for (j = 0; j &lt; 3; j++) {&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; d1[j] = vdata[tindices[i][0]][j] - vdata[tindices[i][1]][j];&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; d2[j] = vdata[tindices[i][1]][j] - vdata[tindices[i][2]][j];&nbsp;&nbsp;&nbsp;&nbsp;
+}
+normcrossprod(d1, d2, norm);&nbsp;
+glNormal3fv(norm);</PRE>
+The function <B>normcrossprod()</B> produces the normalized cross product
+of two vectors, as shown in Example 2-6 .
+<P><B>Example 2-6 : </B>Calculating the Normalized Cross Product of Two
+Vectors
+<PRE>void normalize(float v[3]) {&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; GLfloat d = sqrt(v[1]*v[1]+v[2]*v[2]+v[3]*v[3]);&nbsp;
+&nbsp;&nbsp; if (d == 0.0) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; error("zero length vector");&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return;
+&nbsp;&nbsp; }
+&nbsp;&nbsp; v[1] /= d; v[2] /= d; v[3] /= d;&nbsp;
+}
+
+void normcrossprod(float v1[3], float v2[3], float out[3])&nbsp;
+{&nbsp;
+&nbsp;&nbsp; GLint i, j;&nbsp;
+&nbsp;&nbsp; GLfloat length;
+
+&nbsp;&nbsp; out[0] = v1[1]*v2[2] - v1[2]*v2[1];&nbsp;
+&nbsp;&nbsp; out[1] = v1[2]*v2[0] - v1[0]*v2[2];&nbsp;
+&nbsp;&nbsp; out[2] = v1[0]*v2[1] - v1[1]*v2[0];&nbsp;
+&nbsp;&nbsp; normalize(out);&nbsp;
+}</PRE>
+If you're using an icosahedron as an approximation for a shaded sphere,
+you'll want to use normal vectors that are perpendicular to the true surface
+of the sphere, rather than being perpendicular to the faces. For a sphere,
+the normal vectors are simple; each points in the same direction as the
+vector from the origin to the corresponding vertex. Since the icosahedron
+vertex data is for an icosahedron of radius 1, the normal and vertex data
+is identical. Here is the code that would draw an icosahedral approximation
+of a smoothly shaded sphere (assuming that lighting is enabled, as described
+in Chapter 6 ):
+<PRE>for (i = 0; i &lt; 20; i++) {&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; glBegin(GL_POLYGON);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3fv(&amp;vdata[tindices[i][0]][0]);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3fv(&amp;vdata[tindices[i][0]][0]);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3fv(&amp;vdata[tindices[i][1]][0]);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3fv(&amp;vdata[tindices[i][1]][0]);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3fv(&amp;vdata[tindices[i][2]][0]);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex3fv(&amp;vdata[tindices[i][2]][0]);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; glEnd();&nbsp;
+}</PRE>
+
+<H4>
+Improving the Model</H4>
+A twenty-sided approximation to a sphere doesn't look good unless the image
+of the sphere on the screen is quite small, but there's an easy way to
+increase the accuracy of the approximation. Imagine the icosahedron inscribed
+in a sphere, and subdivide the triangles as shown in Figure 2-14 . The
+newly introduced vertices lie slightly inside the sphere, so push them
+to the surface by normalizing them (dividing them by a factor to make them
+have length 1). This subdivision process can be repeated for arbitrary
+accuracy. The three objects shown in Figure 2-14 use twenty, eighty, and
+three hundred and twenty approximating triangles, respectively.
+<P><IMG SRC="figures/icos.gif" ALT="[IMAGE]" NOSAVE HEIGHT=269 WIDTH=758>
+<P><B>Figure 2-14 : </B>Subdividing to Improve a Polygonal Approximation
+to a Surface
+<BR>&nbsp;
+<BR>&nbsp;
+<P>Example 2-7 performs a single subdivision, creating an eighty-sided
+spherical approximation.
+<P><B>Example 2-7 : </B>Single Subdivision
+<PRE>void drawtriangle(float *v1, float *v2, float *v3)&nbsp;
+{&nbsp;
+&nbsp;&nbsp; glBegin(GL_POLYGON);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3fv(v1); vlVertex3fv(v1);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3fv(v2); vlVertex3fv(v2);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3fv(v3); vlVertex3fv(v3);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; glEnd();&nbsp;
+}
+
+void subdivide(float *v1, float *v2, float *v3)&nbsp;
+{&nbsp;
+&nbsp;&nbsp; GLfloat v12[3], v23[3], v31[3];&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; GLint i;
+
+&nbsp;&nbsp; for (i = 0; i &lt; 3; i++) {&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v12[i] = v1[i]+v2[i];&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v23[i] = v2[i]+v3[i];&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v31[i] = v3[i]+v1[i];&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; }&nbsp;
+&nbsp;&nbsp; normalize(v12);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; normalize(v23);&nbsp;
+&nbsp;&nbsp; normalize(v31);&nbsp;
+&nbsp;&nbsp; drawtriangle(v1, v12, v31);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; drawtriangle(v2, v23, v12);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; drawtriangle(v3, v31, v23);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; drawtriangle(v12, v23, v31);&nbsp;
+}
+
+for (i = 0; i &lt; 20; i++) {&nbsp;
+&nbsp;&nbsp; subdivide(&amp;vdata[tindices[i][0]][0],&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;vdata[tindices[i][1]][0],&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;vdata[tindices[i][2]][0]);&nbsp;
+}</PRE>
+Example 2-8 is a slight modification of Example 2-7 that recursively subdivides
+the triangles to the proper depth. If the depth value is 0, no subdivisions
+are performed, and the triangle is drawn as is. If the depth is 1, a single
+subdivison is performed, and so on.
+<P><B>Example 2-8 : </B>Recursive Subdivision
+<PRE>void subdivide(float *v1, float *v2, float *v3, long depth)
+{
+&nbsp;&nbsp; GLfloat v12[3], v23[3], v31[3];
+&nbsp;&nbsp; GLint i;
+
+&nbsp;&nbsp; if (depth == 0) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawtriangle(v1, v2, v3);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return;
+&nbsp;&nbsp; }
+&nbsp;&nbsp; for (i = 0; i &lt; 3; i++) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v12[i] = v1[i]+v2[i];
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v23[i] = v2[i]+v3[i];
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v31[i] = v3[i]+v1[i];
+&nbsp;&nbsp; }
+&nbsp;&nbsp; normalize(v12);
+&nbsp;&nbsp; normalize(v23);
+&nbsp;&nbsp; normalize(v31);
+&nbsp;&nbsp; subdivide(v1, v12, v31, depth-1);
+&nbsp;&nbsp; subdivide(v2, v23, v12, depth-1);
+&nbsp;&nbsp; subdivide(v3, v31, v23, depth-1);
+&nbsp;&nbsp; subdivide(v12, v23, v31, depth-1);
+}</PRE>
+
+<H4>
+Generalized Subdivision</H4>
+A recursive subdivision technique such as the one described in Example
+2-8 can be used for other types of surfaces. Typically, the recursion ends
+either if a certain depth is reached, or if some condition on the curvature
+is satisfied (highly curved parts of surfaces look better with more subdivision).
+<P>To look at a more general solution to the problem of subdivision, consider
+an arbitrary surface parameterized by two variables <I>u[0]</I> and <I>u[1]</I>.
+Suppose that two routines are provided:
+<PRE>void surf(GLfloat u[2], GLfloat vertex[3], GLfloat normal[3]);&nbsp;
+float curv(GLfloat u[2]);</PRE>
+If <B>surf()</B> is passed <I>u[]</I>, the corresponding three-dimensional
+vertex and normal vectors (of length 1) are returned. If <I>u[]</I> is
+passed to <B>curv()</B>, the curvature of the surface at that point is
+calculated and returned. (See an introductory textbook on differential
+geometry for more information about measuring surface curvature.)
+<P>Example 2-9 shows the recursive routine that subdivides a triangle either
+until the maximum depth is reached or until the maximum curvature at the
+three vertices is less than some cutoff.
+<P><B>Example 2-9 : </B>Generalized Subdivision
+<PRE>void subdivide(float u1[2], float u2[2], float u3[2],
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float cutoff, long depth)
+{
+&nbsp;&nbsp; GLfloat v1[3], v2[3], v3[3], n1[3], n2[3], n3[3];
+&nbsp;&nbsp; GLfloat u12[2], u23[2], u32[2];
+&nbsp;&nbsp; GLint i;
+
+&nbsp;&nbsp; if (depth == maxdepth || (curv(u1) &lt; cutoff &amp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; curv(u2) &lt; cutoff &amp;&amp; curv(u3) &lt; cutoff)) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; surf(u1, v1, n1); surf(u2, v2, n2); surf(u3, v3, n3);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glBegin(GL_POLYGON);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3fv(n1); glVertex3fv(v1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3fv(n2); glVertex3fv(v2);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glNormal3fv(n3); glVertex3fv(v3);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEnd();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return;
+&nbsp;&nbsp; }
+&nbsp;&nbsp; for (i = 0; i &lt; 2; i++) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; u12[i] = (u1[i] + u2[i])/2.0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; u23[i] = (u2[i] + u3[i])/2.0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; u31[i] = (u3[i] + u1[i])/2.0;
+&nbsp;&nbsp; }
+&nbsp;&nbsp; subdivide(u1, u12, u31, cutoff, depth+1);
+&nbsp;&nbsp; subdivide(u2, u23, u12, cutoff, depth+1);
+&nbsp;&nbsp; subdivide(u3, u31, u23, cutoff, depth+1);
+&nbsp;&nbsp; subdivide(u12, u23, u31, cutoff, depth+1);
+}</PRE>
+
+<HR>
+<A HREF="chapter01.html">[Previous chapter]</A> <A HREF="chapter03.html">[Next
+chapter]</A>
+<HR>
+See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>

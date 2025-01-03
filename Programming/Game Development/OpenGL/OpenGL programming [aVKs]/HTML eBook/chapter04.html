@@ -1,0 +1,824 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Chapter 4 - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<HR>
+<H1>
+Chapter 4<BR>
+Display Lists</H1>
+<B>Chapter Objectives</B>
+<P>After reading this chapter, you'll be able to do the following:
+<UL>Understand how clients and servers work together in a networked OpenGL
+system
+<BR>&nbsp;
+<P>Understand how display lists can be used along with commands in immediate
+mode to improve performance
+<BR>&nbsp;
+<P>Maximize performance by knowing how and when to use display lists</UL>
+A display list is a group of OpenGL commands that have been stored for
+later execution. When a display list is invoked, the commands in it are
+executed in the order in which they were issued. Most OpenGL commands can
+be either stored in a display list or issued in immediate mode, which causes
+them to be executed immediately. You can freely mix immediate-mode programming
+and display lists within a single program. The programming examples you've
+seen so far have used immediate mode. This chapter discusses what display
+lists are and how best to use them. It has the following major sections:
+<UL>"An Example of Using a Display List" gives a brief example, showing
+the basic commands for using display lists.
+<BR>&nbsp;
+<P>"Display-List Design Philosophy" explains when to use display lists.
+<BR>&nbsp;
+<P>"Creating and Executing a Display List" discusses in detail the commands
+for creating and executing display lists.
+<BR>&nbsp;
+<P>"Managing Display Lists and Their Indices" explains how to let OpenGL
+generate display-list indices for you automatically.
+<BR>&nbsp;
+<P>"Executing Multiple Display Lists" shows how to execute several display
+lists in succession, using a small character set as an example.
+<BR>&nbsp;
+<P>"Encapsulating Mode Changes" tells you how to use display lists to switch
+efficiently among different modes.</UL>
+
+<HR>
+<H2>
+An Example of Using a Display List</H2>
+A display list is a convenient and efficient way to name and organize a
+set of OpenGL commands. For example, suppose you want to draw a circle
+with 100 line segments. Without using display lists, you might write immediate-mode
+code like this:
+<PRE>drawCircle()
+{
+&nbsp;&nbsp; GLint i;
+&nbsp;&nbsp; GLfloat cosine, sine;
+
+&nbsp;&nbsp; glBegin(GL_POLYGON);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for(i=0;i&lt;100;i++){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cosine=cos(i*2*PI/100.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sine=sin(i*2*PI/100.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(cosine,sine);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp; glEnd();
+}</PRE>
+This method is terribly inefficient because the trigonometry has to be
+performed each time the circle is rendered. Instead, you could save the
+coordinates in a table, and then pull the coordinates out of the table
+as needed:
+<PRE>drawCircle()
+{
+&nbsp;&nbsp; GLint i;
+&nbsp;&nbsp; GLfloat cosine, sine;
+&nbsp;&nbsp; static GLfloat circoords[100][2];
+&nbsp;&nbsp; static GLint inited=0;
+
+&nbsp;&nbsp; if(inited==0){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; inited=1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for(i=0;i&lt;100;i++){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; circcoords[i][0]=cos(i*2*PI/100.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; circcoords[i][1]=sin(i*2*PI/100.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp; }
+&nbsp;&nbsp; glBegin(GL_POLYGON);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for(i=0;i&lt;100;i++)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2fv(&amp;circcoords[i][0]);
+&nbsp;&nbsp; glEnd();
+}</PRE>
+Even with this improved method, you still incur a slight penalty from incrementing
+and testing the variable<I> i</I>. What you really want to do is draw the
+circle once and have OpenGL remember how to draw it for later use. This
+is exactly what a display list is for, as shown in Example 4-1 .
+<P><B>Example 4-1 : </B>Creating a Display List
+<PRE>#define MY_CIRCLE_LIST 1
+
+buildCircle()
+{
+&nbsp;&nbsp; GLint i;
+&nbsp;&nbsp; GLfloat cosine, sine;
+
+&nbsp;&nbsp; glNewList(MY_CIRCLE_LIST, GL_COMPILE);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glBegin(GL_POLYGON);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for(i=0;i&lt;100;i++){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cosine=cos(i*2*PI/100.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sine=sin(i*2*PI/100.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(cosine,sine);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEnd();
+&nbsp;&nbsp; glEndList();
+}</PRE>
+Note that the code for drawing a circle is bracketed by <B>glNewList()</B>
+and <B>glEndList()</B>. As you might have guessed, these commands define
+a display list. The argument MY_CIRCLE_LIST for <B>glNewList()</B> is an
+integer index that uniquely identifies this display list. You can execute
+the display list later with this <B>glCallList()</B> command:
+<PRE>glCallList(MY_CIRCLE_LIST);</PRE>
+A display list contains only OpenGL calls. Other calls - in Example 4-1
+, the C functions <B>cos()</B> and <B>sin()</B> - aren't stored in the
+display list. Instead, the coordinates and other variables (such as array
+contents) are evaluated and copied into the display list with the values
+they have when the list is compiled. After such a list has been compiled,
+these values can't be changed. You can delete a display list and create
+a new one, but you can't edit an existing display list.
+<P>
+<HR>
+<H2>
+Display-List Design Philosophy</H2>
+OpenGL display lists are designed to optimize performance, particularly
+over networks, but never at the expense of performance on a local machine.
+A display list resides with the OpenGL server state, which in a networked
+environment might be on a different machine than the host (or client state).
+"What Is OpenGL?" discusses OpenGL's client-server model.
+<P>To optimize performance, an OpenGL display list is a cache of commands
+rather than a dynamic database. In other words, once a display list is
+created, it can't be modified. If a display list were modifiable, performance
+could be reduced by the overhead required to search through the display
+list and to perform memory management. As portions of a modifiable display
+list were changed, memory allocation and deallocation might lead to memory
+fragmentation. Using display lists is typically at least as fast as using
+immediate mode. Display lists can substantially increase performance -
+particularly when you issue OpenGL routines across networks, since display
+lists reside with the server and network traffic is minimized.
+<P>Even locally, a display list might be more efficient since it can be
+processed as it's created into a form that's more compatible with the graphics
+hardware. The particular commands that are so optimized may vary from implementation
+to implementation. For example, a command as simple as <B>glRotate*()</B>
+might show a significant improvement if it's in a display list, since the
+calculations to produce the rotation matrix aren't trivial (they can involve
+square roots and trigonometric functions). In the display list, however,
+only the final rotation matrix needs to be stored, so a display-list rotation
+command can be executed as fast as the hardware can execute <B>glMultMatrix()</B>.
+A sophisticated OpenGL implementation might even concatenate adjacent transformation
+commands into a single matrix multiplication.
+<P>Although you're not guaranteed that your OpenGL implementation optimizes
+display lists for any particular uses, you know that execution of display
+lists isn't slower than executing the commands contained within them. There
+is some overhead, however, involved in jumping to a display list. If a
+particular list is small, this overhead could exceed any execution advantage.
+The most likely possibilities for optimization are listed below, with references
+to the chapters where the topics are discussed.
+<UL>Matrix operations (Chapter 3 ). Most matrix operations require OpenGL
+to compute inverses. Both the computed matrix and its inverse might be
+stored by a particular OpenGL implementation in a display list.
+<BR>&nbsp;
+<P>Raster bitmaps and images (Chapter 4 ). The format in which you specify
+raster data isn't likely to be one that's ideal for the hardware. When
+a display list is compiled, OpenGL might transform the data into the representation
+preferred by the hardware. This can have a significant effect on the speed
+of raster character drawing, since character strings usually consist of
+a series of small bitmaps.
+<BR>&nbsp;
+<P>Lights, material properties, and lighting models (Chapter 6 ). When
+you draw a scene with complex lighting conditions, you might change the
+materials for each item in the scene. Setting the materials can be slow,
+since it might involve significant calculations. If you put the material
+definitions in display lists, these calculations don't have to be done
+each time you switch materials, since only the results of the calculations
+need to be stored; as a result, rendering lit scenes might be faster. See
+"Encapsulating Mode Changes" for more details on using display lists to
+change such values as lighting conditions.
+<BR>&nbsp;
+<P>Textures (Chapter 9 ). You might be able to maximize efficiency when
+defining textures by compiling them into a display list, since the hardware
+texture format might differ from the OpenGL format, and the conversion
+can be done at display-list compile time rather than during display.
+<BR>&nbsp;
+<P>Polygon stipple patterns (Chapter 2 ).</UL>
+Some of the commands to specify the properties listed here are context-
+sensitive, so you need to take this into account to ensure optimum performance.
+Most situations where this makes a difference involve pixel-transfer functions,
+lighting models, and texturing. Since all these topics haven't been introduced
+yet - they're covered in later chapters - the following example is a bit
+contrived. Although the specifics of this example are very unlikely, it
+illustrates an important principle that's discussed again in later chapters.
+<P>Imagine an implementation of OpenGL that's optimized to perform matrix
+transformations on vertices before storing them in a display list. If this
+were true, the time needed to perform the transformations would occur before
+rather than during display. Now suppose your code looked something like
+this:
+<PRE>glLoadMatrix(M);&nbsp;
+glNewList(1, GL_COMPILE);&nbsp;
+draw_some_geometric_objects();&nbsp;
+glEndList();</PRE>
+The vertices in the objects would be compiled into the display list after
+having been transformed by matrix <B>M</B>. Suppose you invoke the display
+list as follows:
+<PRE>glLoadMatrix(N);
+glCallList(1);</PRE>
+In this case, the geometric objects should be drawn using matrix <B>N</B>,
+but the data in the display list has been transformed by matrix <B>M</B>
+before it was stored. Thus, the display list has to save two copies of
+the original data (both the untransformed and the transformed vertices),
+thereby wasting memory. In addition, the vertices undergo two transformations
+when perhaps one would have sufficed. If instead you had defined the display
+list as follows:
+<PRE>glNewList(1, GL_COMPILE);&nbsp;
+glLoadMatrix(M);&nbsp;
+draw_some_geometry();&nbsp;
+glEndList();</PRE>
+then no extra data would have to be stored, and full optimization would
+be possible. Of course, in this second case, you'd want to be sure that
+matrix <B>M</B> was really the transformation matrix you wanted.
+<P>Remember that display lists have some disadvantages. The <B>buildCircle()</B>
+example in Example 4-1 requires storage for at least 200 floating-point
+numbers, whereas the object code for the original <B>drawCircle()</B> routine
+(in immediate mode) is probably a lot smaller than that. Another disadvantage
+is the immutability of the contents of a display list. To optimize performance,
+an OpenGL display list can't be changed, and its contents can't be read.
+<P>
+<HR>
+<H2>
+Creating and Executing a Display List</H2>
+As you've already seen, <B>glNewList()</B> and <B>glEndList()</B> are used
+to begin and end the definition of a display list, which is then invoked
+by supplying its identifying index with <B>glCallList()</B>. In Example
+4-2 , a display list is created in the <B>makeList()</B> routine. This
+display list contains OpenGL commands to draw a red triangle. Then, in
+the <B>display()</B> routine, the display list is executed ten times. In
+addition, a line is drawn in immediate mode. Note that the display list
+allocates memory to store the commands and the values of any necessary
+variables.
+<P><B>Example 4-2 : </B>Using a Display List: list.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include "aux.h"
+
+GLuint listName = 1;
+
+void myinit (void)
+{
+glNewList (listName, GL_COMPILE);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glColor3f(1.0, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glBegin (GL_TRIANGLES);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f (0.0, 0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f (1.0, 0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f (0.0, 1.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEnd ();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glTranslatef (1.5, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp; glEndList ();
+&nbsp;&nbsp;&nbsp; glShadeModel (GL_FLAT);
+}
+
+void drawLine (void)
+{
+&nbsp;&nbsp;&nbsp; glBegin (GL_LINES);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f (0.0, 0.5);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f (15.0, 0.5);
+&nbsp;&nbsp;&nbsp; glEnd ();
+}
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; GLuint i;
+&nbsp;&nbsp;&nbsp; glClear (GL_COLOR_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; glColor3f(0.0, 1.0, 0.0);
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; 10; i++)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glCallList (listName);
+&nbsp;&nbsp;&nbsp; drawLine ();
+&nbsp;&nbsp;&nbsp; glFlush ();
+}
+
+void myReshape(GLsizei w, GLsizei h)
+{
+&nbsp;&nbsp;&nbsp; glViewport(0, 0, w, h);
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_PROJECTION);
+&nbsp;&nbsp;&nbsp; glLoadIdentity();
+&nbsp;&nbsp;&nbsp; if (w &lt;= h)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; gluOrtho2D (0.0, 2.0, -0.5 * (GLfloat) h/(GLfloat) w,&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.5 * (GLfloat) h/(GLfloat) w);
+&nbsp;&nbsp;&nbsp; else&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; gluOrtho2D (0.0, 2.0 * (GLfloat) w/(GLfloat) h, -0.5,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.5);&nbsp;
+&nbsp;&nbsp;&nbsp; glMatrixMode(GL_MODELVIEW);
+&nbsp;&nbsp;&nbsp; glLoadIdentity();
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode (AUX_SINGLE | AUX_RGBA);
+&nbsp;&nbsp;&nbsp; auxInitPosition (0, 0, 400, 50);
+&nbsp;&nbsp;&nbsp; auxInitWindow (argv[0]);
+&nbsp;&nbsp;&nbsp; myinit ();
+&nbsp;&nbsp;&nbsp; auxReshapeFunc (myReshape);
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+The <B>glTranslatef()</B> routine in the display list alters the position
+of the next object to be drawn. Without it, calling the display list twice
+would just draw the triangle on top of itself. The <B>drawLine()</B> routine,
+which is called in immediate mode, is also affected by the ten <B>glTranslatef()</B>
+calls that precede it. Thus, if you call transformation commands within
+a display list, don't forget to take the effect of those commands into
+account later in your program.
+<P>Only one display list can be created at a time. In other words, you
+must eventually follow <B>glNewList()</B> with <B>glEndList()</B> to end
+the creation of a display list before starting another one. As you might
+expect, calling <B>glEndList()</B> without having started a display list
+generates the error GL_INVALID_OPERATION. void <B>glNewList</B> (GLuint
+<I>list</I>, GLenum <I>mode</I>);
+<P>Specifies the start of a display list. OpenGL routines that are called
+subsequently (until <B>glEndList()</B> is called to end the display list)
+are stored in a display list, except for a few restricted OpenGL routines
+that can't be stored. (Those restricted routines are executed immediately,
+during the creation of the display list.) The <I>list</I> parameter is
+a unique positive integer that identifies the display list. The possible
+values for the <I>mode</I> parameter are GL_COMPILE and GL_COMPILE_AND_EXECUTE.
+Use GL_COMPILE if you don't want the following OpenGL commands executed
+as they're placed in the display list; to cause the commands to be executed
+immediately as well as placed in the display list for later use, specify
+GL_COMPILE_AND_EXECUTE.
+<P>void <B>glEndList</B> (void);
+<P>Marks the end of a display list.
+<H3>
+What's Stored in a Display List</H3>
+When you're building a display list, only the values for expressions are
+stored in the list. Thus, if values in an array are subsequently changed,
+for example, the display-list values don't change. In the following code
+fragment, the display list contains a command to set the current color
+to black (0.0, 0.0, 0.0). The subsequent change of the value of the <I>color_vector</I>
+array to red (1.0, 0.0, 0.0) has no effect on the display list because
+the display list contains the values that were in effect when it was created.
+<PRE>GLfloat color_vector[3]={0.0,0.0,0.0};
+glNewList(1,GL_COMPILE);
+&nbsp;&nbsp; glColor3fv(color_vector);
+glEndList();
+color_vector[0]=1.0;</PRE>
+Not all OpenGL commands can be stored and executed from within a display
+list. Generally, commands that pass parameters by reference or that return
+a value can't be stored in a display list, since the list might be called
+outside the scope of where the parameters are originally defined. If such
+commands are called when making a display list, they're executed immediately
+and aren't stored in the display list. Here are the OpenGL commands that
+aren't stored in a display list (also, note that <B>glNewList()</B> generates
+an error if it's called while you're creating a display list). Some of
+these commands haven't been described yet; you can look in the index to
+see where they're discussed.
+<P>glDeleteLists() glIsEnabled()
+<P>glFeedbackBuffer() glIsList()
+<P>glFinish() glPixelStore()
+<P>glFlush() glReadPixels()
+<P>glGenLists() glRenderMode()
+<P>glGet*() glSelectBuffer()
+<P>To understand more clearly why these commands can't be stored in a display
+list, remember that when you're using OpenGL across a network, the client
+may be on one machine and the server on another. After a display list is
+created, it resides with the server, so the server can't rely on the client
+for any information related to the display list. If querying commands,
+such as <B>glGet*() </B>or <B>glIs*()</B>, were allowed in a display list,
+the calling program would be surprised at random times by data returned
+over the network. Without parsing the display list as it was sent, the
+calling program wouldn't know where to put the data. Thus, any command
+that returns a value can't be stored in a display list. Other routines
+- such as <B>glFlush()</B> and <B>glFinish()</B> - can't be stored in a
+display list because they depend on information about the client state.
+Finally, commands that change a state value maintained by the client can't
+be stored in a display list.
+<H3>
+Executing a Display List</H3>
+After you've created a display list, you can execute it by calling <B>glCallList()</B>.
+Naturally, you can execute the same display list many times, and you can
+mix calls to execute display lists with calls to perform immediate-mode
+graphics, as you've already seen. void <B>glCallList</B> (GLuint <I>list</I>);
+<P>This routine executes the display list specified by <I>list</I>. The
+commands in the display list are executed in the order they were saved,
+just as if they were issued without using a display list. If <B>list</B>
+hasn't been defined, nothing happens.
+<P>Since a display list can contain calls that change the value of OpenGL
+state variables, these values change as the display list is executed, just
+as if the commands were called in immediate mode. The changes to OpenGL
+state persist after execution of the display list is completed. In Example
+4-2 , the changes to the current color and current matrix made during the
+execution of the display list remain in effect after it's been called,
+as shown in Example 4-3 .
+<P><B>Example 4-3 : </B>Persistence of State Changes after Execution of
+a Display List
+<PRE>glNewList(listIndex,GL_COMPILE);
+&nbsp;&nbsp; glColor3f(1.0, 0.0, 0.0);
+&nbsp;&nbsp; glBegin(GL_POLYGON);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(0.0,0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(1.0,0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(0.0,1.0);
+&nbsp;&nbsp; glEnd();
+&nbsp;&nbsp; glTranslatef(1.5,0.0,0.0);
+glEndList();</PRE>
+Sometimes you want state changes to persist, but other times you want to
+save the values of state variables before executing a display list and
+then restore these values after the list has executed. Use <B>glPushAttrib()</B>
+to save a group of state variables and <B>glPopAttrib()</B> to restore
+the values when you're ready for them. (See Appendix B for more information
+about these commands.) To save and restore the current matrix, use <B>glPushMatrix()</B>
+and <B>glPopMatrix()</B> as described in "Manipulating the Matrix Stacks."
+To restore the state variables in Example 4-3 , you might use the code
+shown in Example 4-4 .
+<P><B>Example 4-4 : </B>Restoring State Variables within a Display List
+<PRE>glNewList(listIndex,GL_COMPILE);
+&nbsp;&nbsp; glPushMatrix();
+&nbsp;&nbsp; glPushAttrib(GL_CURRENT_BIT);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glColor3f(1.0, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glBegin(GL_POLYGON);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(0.0,0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(1.0,0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2f(0.0,1.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEnd();
+&nbsp;&nbsp; glTranslatef(1.5,0.0,0.0);
+&nbsp;&nbsp; glPopAttrib();
+&nbsp;&nbsp; glPopMatrix();
+glEndList();</PRE>
+Thus, if you used this kind of a display list that restores values, the
+code in Example 4-5 would draw a green, untranslated line. With the display
+list in Example 4-3 that doesn't save and restore values, the line drawn
+would be red, and its position would be translated.
+<P><B>Example 4-5 : </B>Using a Display List That Restores State Variables
+<PRE>void display(void)
+{
+&nbsp;&nbsp;&nbsp; GLint i;
+
+&nbsp;&nbsp;&nbsp; glClear (GL_COLOR_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; glColor3f(0.0, 1.0, 0.0);
+&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; 10; i++)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glCallList (listIndex);
+&nbsp;&nbsp;&nbsp; drawLine ();
+&nbsp;&nbsp;&nbsp; glFlush ();
+}</PRE>
+You can call <B>glCallList()</B> from anywhere within a program, as long
+as its OpenGL context is still active. A display list can be created in
+one routine and executed in a different one, since its index uniquely identifies
+it. Also, there is no facility to save the contents of a display list into
+a data file, nor a facility to create a display list from a file. In this
+sense, a display list is designed for temporary use. Also, a display list
+is destroyed when its OpenGL context is destroyed.
+<H3>
+Hierarchical Display Lists</H3>
+You can create a <I>hierarchical display list</I>, which is a display list
+that executes another display list, by calling <B>glCallList()</B> between
+a <B>glNewList()</B> and <B>glEndList()</B> pair. A hierarchical display
+list is useful for an object that's made of components, especially if some
+of those components are used more than once. For example, this is a display
+list that renders a bicycle by calling other display lists to render parts
+of the bicycle:
+<PRE>glNewList(listIndex,GL_COMPILE);
+&nbsp;&nbsp; glCallList(handlebars);
+&nbsp;&nbsp; glCallList(frame);
+&nbsp;&nbsp; glTranslatef(1.0,0.0,0.0);
+&nbsp;&nbsp; glCallList(wheel);
+&nbsp;&nbsp; glTranslatef(3.0,0.0,0.0);
+&nbsp;&nbsp; glCallList(wheel);
+glEndList();</PRE>
+To avoid infinite recursion, there's a limit on the nesting level of display
+lists; the limit is at least 64, but it might be higher, depending on the
+implementation. To determine the nesting limit for your implementation
+of OpenGL, call
+<PRE>glGetIntegerv(GL_MAX_LIST_NESTING, GLint *data);</PRE>
+OpenGL allows you to create a display list that calls another list that
+hasn't been created yet. Nothing happens when the first list calls the
+second, undefined one.
+<P>You can use a hierarchical display list to approximate an editable display
+list by wrapping a list around several lower-level lists. For example,
+to put a polygon in a display list while allowing yourself to be able to
+easily edit its vertices, you could use the code in Example 4-6 .
+<P><B>Example 4-6 : </B>Using a Hierarchical Display List
+<PRE>glNewList(1,GL_COMPILE);&nbsp;
+&nbsp;&nbsp; glVertex3f(v1);&nbsp;
+glEndList();
+glNewList(2,GL_COMPILE);&nbsp;
+&nbsp;&nbsp; glVertex3f(v2);&nbsp;
+glEndList();
+glNewList(3,GL_COMPILE);&nbsp;
+&nbsp;&nbsp; glVertex3f(v3);&nbsp;
+glEndList();
+
+glNewList(4,GL_COMPILE);
+&nbsp;&nbsp; glBegin(GL_POLYGON);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glCallList(1);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glCallList(2);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glCallList(3);
+&nbsp;&nbsp; glEnd();
+glEndList();</PRE>
+To render the polygon, call display list number 4. To edit a vertex, you
+need only recreate the single display list corresponding to that vertex.
+Since an index number uniquely identifies a display list, creating one
+with the same index as an existing one automatically deletes the old one.
+Keep in mind that this technique doesn't necessarily provide optimal memory
+usage or peak performance, but it's acceptable and useful in some cases.
+<P>
+<HR>
+<H2>
+Managing Display Lists and Their Indices</H2>
+So far, we've used an arbitrary positive integer as a display-list index.
+This could be dangerous in practice because you might accidentally choose
+an index that's already in use, thereby overwriting an existing display
+list. To avoid accidental deletions, use <B>glGenLists()</B> to generate
+an unused index and <B>glIsList()</B> to determine whether a specific index
+is in use. You can explicitly delete a specific display list or a range
+of lists with <B>glDeleteLists()</B>. GLuint <B>glGenLists</B>(GLsizei
+<I>range</I>);
+<P>Allocates <I>range</I> number of contiguous, previously unallocated
+display-list indices. The integer returned is the index that marks the
+beginning of a contiguous block of empty display-list indices. The returned
+indices are all marked as empty and used, so subsequent calls to <B>glGenLists()</B>
+don't return these indices until they're deleted. Zero is returned if the
+requested number of indices isn't available, or if <I>range</I> is zero.
+<P>GLboolean <B>glIsList</B>(GLuint <I>list</I>);
+<P>Returns TRUE if <I>list</I> is already used for a display list and FALSE
+otherwise.
+<P>In the following example, a single index is requested, and if it proves
+to be available, it's used to create a new display list:
+<PRE>listIndex=glGenLists(1);
+if(listIndex!=0) {
+&nbsp;&nbsp; glNewList(listIndex,GL_COMPILE);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp; glEndList();
+}</PRE>
+The command <B>glDeleteLists()</B> deletes a contiguous group of display
+lists, thereby making their indices available again. void <B>glDeleteLists</B>(GLuint
+<I>list</I>, GLsizei <I>range</I>);
+<P>Deletes <I>range</I> display lists, starting at the index specified
+by <I>list</I>. An attempt to delete a list that has never been created
+is ignored.
+<P>
+<HR>
+<H2>
+Executing Multiple Display Lists</H2>
+OpenGL provides an efficient mechanism to execute several display lists
+in succession. This mechanism requires that you put the display-list indices
+in an array and call <B>glCallLists()</B>. An obvious use for such a mechanism
+occurs when display-list indices correspond to meaningful values. For example,
+if you're creating a font, each display-list index might correspond to
+the ASCII value of a character in that font. To have several such fonts,
+you would need to establish a different initial display-list index for
+each font. You can specify this initial index by using <B>glListBase()</B>
+before calling <B>glCallLists()</B>. void <B>glListBase</B>(GLuint <I>base</I>);
+<P>Specifies the offset that's added to the display-list indices in <B>glCallLists()</B>
+to obtain the final display-list indices. The default display-list base
+is 0. The list base has no effect on <B>glCallList()</B>, which executes
+only one display list, or on <B>glNewList()</B>.
+<P>void <B>glCallLists</B>(GLsizei <I>n</I>, GLenum <I>type</I>, const
+GLvoid *<I>lists</I>);
+<P>Executes <I>n</I> display lists. The indices of the lists to be executed
+are computed by adding the offset indicated by the current display-list
+base (specified with <B>glListBase()</B>) to the signed integer values
+in the array pointed to by <I>lists</I>.
+<P>The <I>type</I> parameter indicates the data type and the "stride" (or
+size) of each element in the array of indices. It's usually one of these
+constants: GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT,
+GL_UNSIGNED_INT, or GL_FLOAT. It can also be GL_2_BYTES, GL_3_BYTES, or
+GL_4_BYTES, in which case sequences of two, three, or four bytes are shifted
+and added together, byte by byte, to calculate the display-list offset,
+using this algorithm:
+<PRE>/* b = 2, 3, or 4; bytes are numbered 0, 1, 2, 3 in array */&nbsp;
+&nbsp;offset = 0;&nbsp;
+&nbsp;for (i = 0; i &lt; b; i++) {&nbsp;
+&nbsp;offset = offset &lt;&lt; 8;&nbsp;
+&nbsp;offset += byte[i];&nbsp;
+&nbsp;}&nbsp;
+index = offset + listbase;</PRE>
+This means that for multiple-byte data, as bytes are taken from the array
+in order, the highest-order data comes first.
+<P>As an example of the use of multiple display lists, look at the program
+fragments in Example 4-7 taken from the full program in Example 4-8 . This
+program draws characters with a stroked font (a set of letters made from
+line segments). The routine <B>initStrokedFont()</B> sets up the display-list
+indices for each letter so they correspond with their ASCII values.
+<P><B>Example 4-7 : </B>Defining Multiple Display Lists
+<PRE>void initStrokedFont(void)
+{
+&nbsp;&nbsp;&nbsp; GLuint base;
+
+&nbsp;&nbsp;&nbsp; base = glGenLists (128);
+&nbsp;&nbsp;&nbsp; glListBase(base);
+&nbsp;&nbsp;&nbsp; glNewList(base+'A', GL_COMPILE);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawLetter(Adata); glEndList();
+&nbsp;&nbsp;&nbsp; glNewList(base+'E', GL_COMPILE);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawLetter(Edata); glEndList();
+&nbsp;&nbsp;&nbsp; glNewList(base+'P', GL_COMPILE);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawLetter(Pdata); glEndList();
+&nbsp;&nbsp;&nbsp; glNewList(base+'R', GL_COMPILE);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawLetter(Rdata); glEndList();
+&nbsp;&nbsp;&nbsp; glNewList(base+'S', GL_COMPILE);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; drawLetter(Sdata); glEndList();
+&nbsp;&nbsp;&nbsp; glNewList(base+' ', GL_COMPILE);&nbsp;&nbsp;&nbsp; /* space character */
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glTranslatef(8.0, 0.0, 0.0); glEndList();
+}</PRE>
+The <B>glGenLists()</B> command allocates 128 contiguous display-list indices.
+The first of the contiguous indices becomes the display-list base. A display
+list is made for each letter; each display-list index is the sum of the
+base and the ASCII value of that letter. In this example, only a few letters
+and the space character are created.
+<P>After the display lists have been created, <B>glCallLists()</B> can
+be called to execute the display lists. For example, you can pass a character
+string to the subroutine <B>printStrokedString()</B>:
+<PRE>void printStrokedString(GLbyte *s)
+{
+&nbsp;&nbsp;&nbsp; GLint len = strlen(s);
+&nbsp;&nbsp;&nbsp; glCallLists(len, GL_BYTE, s);
+}</PRE>
+The ASCII value for each letter in the string is used as the offset into
+the display-list indices. The current list base is added to the ASCII value
+of each letter to determine the final display-list index to be executed.
+The output produced by Example 4-8 is shown in Figure 4-1 .
+<P><IMG SRC="figures/stroke.gif" ALT="[IMAGE]" >
+<P><B>Figure 4-1 : </B>Example of a Stroked Font That Defines the Characters
+A, E, P, R, S
+<BR>&nbsp;
+<BR>&nbsp;
+<P><B>Example 4-8 : </B>Using Multiple Display Lists to Define a Stroked
+Font: stroke.c
+<PRE>#include &lt;GL/gl.h>
+#include &lt;GL/glu.h>
+#include "aux.h"
+
+#define PT 1
+#define STROKE 2
+#define END 3
+
+typedef struct charpoint {
+&nbsp;&nbsp;&nbsp; GLfloat&nbsp;&nbsp; x, y;
+&nbsp;&nbsp;&nbsp; int&nbsp;&nbsp;&nbsp; type;
+} CP;
+
+CP Adata[] = {
+&nbsp;&nbsp;&nbsp; { 0, 0, PT}, {0, 9, PT}, {1, 10, PT}, {4, 10, PT},&nbsp;
+&nbsp;&nbsp;&nbsp; {5, 9, PT}, {5, 0, STROKE}, {0, 5, PT}, {5, 5, END}
+};
+
+CP Edata[] = {
+&nbsp;&nbsp;&nbsp; {5, 0, PT}, {0, 0, PT}, {0, 10, PT}, {5, 10, STROKE},
+&nbsp;&nbsp;&nbsp; {0, 5, PT}, {4, 5, END}
+};
+
+CP Pdata[] = {
+&nbsp;&nbsp;&nbsp; {0, 0, PT}, {0, 10, PT},&nbsp; {4, 10, PT}, {5, 9, PT},&nbsp;
+&nbsp;&nbsp;&nbsp; {5, 6, PT}, {4, 5, PT}, {0, 5, END}
+};
+
+CP Rdata[] = {
+&nbsp;&nbsp;&nbsp; {0, 0, PT}, {0, 10, PT},&nbsp; {4, 10, PT}, {5, 9, PT},&nbsp;
+&nbsp;&nbsp;&nbsp; {5, 6, PT}, {4, 5, PT}, {0, 5, STROKE}, {3, 5, PT},&nbsp;
+&nbsp;&nbsp;&nbsp; {5, 0, END}
+};
+
+CP Sdata[] = {
+&nbsp;&nbsp;&nbsp; {0, 1, PT}, {1, 0, PT}, {4, 0, PT}, {5, 1, PT}, {5, 4, PT},&nbsp;
+&nbsp;&nbsp;&nbsp; {4, 5, PT}, {1, 5, PT}, {0, 6, PT}, {0, 9, PT}, {1, 10, PT},&nbsp;
+&nbsp;&nbsp;&nbsp; {4, 10, PT}, {5, 9, END}
+};
+
+void drawLetter(CP *l)
+{
+&nbsp;&nbsp;&nbsp; glBegin(GL_LINE_STRIP);
+&nbsp;&nbsp;&nbsp; while (1) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch (l->type) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case PT:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2fv(&amp;l->x);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case STROKE:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2fv(&amp;l->x);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEnd();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glBegin(GL_LINE_STRIP);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case END:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glVertex2fv(&amp;l->x);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEnd();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glTranslatef(8.0, 0.0, 0.0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; l++;
+&nbsp;&nbsp;&nbsp; }
+}
+
+void myinit (void)
+{
+&nbsp;&nbsp;&nbsp; GLuint base;
+
+&nbsp;&nbsp;&nbsp; glShadeModel (GL_FLAT);
+
+&nbsp;&nbsp;&nbsp; base = glGenLists (128);
+&nbsp;&nbsp;&nbsp; glListBase(base);
+&nbsp;&nbsp;&nbsp; glNewList(base+'A', GL_COMPILE); drawLetter(Adata);&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEndList();
+&nbsp;&nbsp;&nbsp; glNewList(base+'E', GL_COMPILE); drawLetter(Edata);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEndList();
+&nbsp;&nbsp;&nbsp; glNewList(base+'P', GL_COMPILE); drawLetter(Pdata);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEndList();
+&nbsp;&nbsp;&nbsp; glNewList(base+'R', GL_COMPILE); drawLetter(Rdata);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEndList();
+&nbsp;&nbsp;&nbsp; glNewList(base+'S', GL_COMPILE); drawLetter(Sdata);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glEndList();
+&nbsp;&nbsp;&nbsp; glNewList(base+' `, GL_COMPILE);&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; glTranslatef(8.0, 0.0, 0.0); glEndList();
+}
+
+char *test1 = "A SPARE SERAPE APPEARS AS";
+char *test2 = "APES PREPARE RARE PEPPERS";
+
+void printStrokedString(char *s)
+{
+&nbsp;&nbsp;&nbsp; GLsizei len = strlen(s);
+&nbsp;&nbsp;&nbsp; glCallLists(len, GL_BYTE, (GLbyte *)s);
+}
+
+void display(void)
+{
+&nbsp;&nbsp;&nbsp; glClear(GL_COLOR_BUFFER_BIT);
+&nbsp;&nbsp;&nbsp; glColor3f(1.0, 1.0, 1.0);
+&nbsp;&nbsp;&nbsp; glPushMatrix();
+&nbsp;&nbsp;&nbsp; glScalef(2.0, 2.0, 2.0);
+&nbsp;&nbsp;&nbsp; glTranslatef(10.0, 30.0, 0.0);
+&nbsp;&nbsp;&nbsp; printStrokedString(test1);
+&nbsp;&nbsp;&nbsp; glPopMatrix();
+&nbsp;&nbsp;&nbsp; glPushMatrix();
+&nbsp;&nbsp;&nbsp; glScalef(2.0, 2.0, 2.0);
+&nbsp;&nbsp;&nbsp; glTranslatef(10.0, 13.0, 0.0);
+&nbsp;&nbsp;&nbsp; printStrokedString(test2);
+&nbsp;&nbsp;&nbsp; glPopMatrix();
+&nbsp;&nbsp;&nbsp; glFlush();
+}
+
+
+int main(int argc, char** argv)
+{
+&nbsp;&nbsp;&nbsp; auxInitDisplayMode (AUX_SINGLE | AUX_RGBA);
+&nbsp;&nbsp;&nbsp; auxInitPosition (0, 0, 440, 120);
+&nbsp;&nbsp;&nbsp; auxInitWindow (argv[0]);
+&nbsp;&nbsp;&nbsp; myinit ();
+&nbsp;&nbsp;&nbsp; auxMainLoop(display);
+}</PRE>
+
+<HR>
+<H2>
+Encapsulating Mode Changes</H2>
+You can use display lists to organize and store groups of commands to change
+various modes or set various parameters. When you want to switch from one
+group of settings to another, using display lists might be more efficient
+than making the calls directly, since the settings might be cached in a
+format that matches the requirements of your graphics system.
+<P>Display lists are likely to be more efficient when you're switching
+between multiple texture maps, for example. (Texture mapping is described
+in Chapter 9 .) Suppose you have two different textures that are fairly
+large, as textures tend to be, but that both of them fit into texture memory.
+Without display lists, you would have to load the data for the first texture,
+use it to draw some objects, wait for the second texture to be loaded into
+memory, and then use it for drawing. When you want to switch back to the
+first texture, it would have to be loaded into memory again rather than
+being plucked out of texture memory. There's no way for OpenGL to know
+that it's already been stored without the display-list mechanism to provide
+a "handle" to identify it. With display lists, both textures can be loaded
+into texture memory once and then used as often as necessary without having
+to be reloaded.
+<P>Another case where display lists are likely to be more efficient than
+immediate mode is for switching among various lighting, lighting-model,
+and material-parameter settings. (These topics are discussed in Chapter
+6 .) You might also use display lists for stipple patterns, fog parameters,
+and clipping-plane equations. In general, you're guaranteed that executing
+display lists is at least as fast as making the relevant calls directly,
+but remember that some overhead is involved in jumping to a display list.
+<P>Example 4-9 shows how to use display lists to switch among three different
+line stipples. First, you call <B>glGenLists()</B> to allocate a display
+list for each stipple pattern and create a display list for each pattern.
+Then, you use <B>glCallList()</B> to switch from one stipple pattern to
+another.
+<P><B>Example 4-9 : </B>Using Display Lists for Mode Changes
+<PRE>GLuint offset;
+offset = glGenLists (3);
+
+glNewList (offset, GL_COMPILE);
+&nbsp;&nbsp;&nbsp; glDisable (GL_LINE_STIPPLE);
+glEndList ();
+
+glNewList (offset+1, GL_COMPILE);
+&nbsp;&nbsp;&nbsp; glEnable (GL_LINE_STIPPLE);
+&nbsp;&nbsp;&nbsp; glLineStipple (1, 0x0F0F);
+glEndList ();
+
+glNewList (offset+2, GL_COMPILE);
+&nbsp;&nbsp;&nbsp; glEnable (GL_LINE_STIPPLE);
+&nbsp;&nbsp;&nbsp; glLineStipple (1, 0x1111);
+glEndList ();
+
+
+#define drawOneLine(x1,y1,x2,y2) glBegin(GL_LINES); \&nbsp;
+&nbsp;&nbsp;&nbsp; glVertex2f ((x1),(y1)); glVertex2f ((x2),(y2)); glEnd();
+
+glCallList (offset);
+drawOneLine (50.0, 125.0, 350.0, 125.0);
+
+glCallList (offset+1);
+drawOneLine (50.0, 100.0, 350.0, 100.0);
+
+glCallList (offset+2);
+drawOneLine (50.0, 75.0, 350.0, 75.0);</PRE>
+
+<HR>
+<A HREF="chapter03.html">[Previous chapter]</A> <A HREF="chapter05.html">[Next
+chapter]</A>
+<HR>
+See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>

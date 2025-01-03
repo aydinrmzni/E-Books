@@ -1,0 +1,192 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (Win98; I) [Netscape]">
+   <META NAME="Author" CONTENT="Goran UnreaL Krajnovic">
+   <TITLE>Appendix H - OpenGL Programming Guide (Addison-Wesley Publishing Company)</TITLE>
+</HEAD>
+<BODY BGCOLOR="#EFEFEF" LINK="#0000FF" VLINK="#551A8B" ALINK="#FF0000">
+
+<DIV ALIGN=right><IMG SRC="figures/SGI_ID.gif" ALT="Silicon Graphics" NOSAVE HEIGHT=43 WIDTH=151 ALIGN=TEXTTOP></DIV>
+
+<HR>
+<H1>
+Appendix H<BR>
+Programming Tips</H1>
+This appendix lists some tips and guidelines that you might find useful.
+Keep in mind that these tips are based on the intentions of the designers
+of the OpenGL, not on any experience with actual applications and implementations!
+This appendix has the following major sections:
+<UL>"OpenGL Correctness Tips"
+<BR>&nbsp;
+<P>"OpenGL Performance Tips"
+<BR>&nbsp;
+<P>"GLX Tips"</UL>
+
+<HR>
+<H2>
+<A NAME="X"></A>OpenGL Correctness Tips</H2>
+
+<UL>Do not count on the error behavior of an OpenGL implementation - it
+might change in a future release of OpenGL. For example, OpenGL 1.0 ignores
+matrix operations invoked between<B> glBegin()</B> and <B>glEnd()</B> commands,
+but OpenGL 1.1 might not. Put another way, OpenGL error semantics may change
+between upward-compatible revisions.
+<BR>&nbsp;
+<P>Use the projection matrix to collapse all geometry to a single plane.
+If the modelview matrix is used, OpenGL features that operate in eye coordinates
+(such as lighting and application-defined clipping planes) might fail.
+<BR>&nbsp;
+<P>Do not make extensive changes to a single matrix. For example, do not
+animate a rotation by continually calling <B>glRotate()</B> with an incremental
+angle. Rather, use <B>glLoadIdentity()</B> to initialize the given matrix
+for each frame, then call <B>glRotate()</B> with the desired complete angle
+for that frame.
+<BR>&nbsp;
+<P>Count on multiple passes through a rendering database to generate the
+same pixel fragments only if this behavior is guaranteed by the invariance
+rules established for a compliant OpenGL implementation. (See Appendix
+I, "OpenGL Invariance" for details on the invariance rules.) Otherwise,
+a different set of fragments might be generated.
+<BR>&nbsp;
+<P>Do not expect errors to be reported while a display list is being defined.
+The commands within a display list generate errors only when the list is
+executed.
+<BR>&nbsp;
+<P>Place the near frustum plane as far from the viewpoint as possible to
+optimize the operation of the depth buffer.
+<BR>&nbsp;
+<P>Call <B>glFlush()</B> to force all previous OpenGL commands to be executed.
+Do not count on <B>glGet*()</B> or <B>glIs*()</B> to flush the rendering
+stream. Query commands flush as much of the stream as is required to return
+valid data but don't guarantee to complete all pending rendering commands.
+<BR>&nbsp;
+<P>Turn dithering off when rendering predithered images (for example, when
+<B>glCopyPixels()</B> is called).
+<BR>&nbsp;
+<P>Make use of the full range of the accumulation buffer. For example,
+if accumulating four images, scale each by one-quarter as it's accumulated.
+<BR>&nbsp;
+<P>If exact two-dimensional rasterization is desired, you must carefully
+specify both the orthographic projection and the vertices of primitives
+that are to be rasterized. The orthographic projection should be specified
+with integer coordinates, as shown in the following example:
+<PRE>gluOrtho2D(0, width, 0, height);</PRE>
+where <B>width</B> and <B>height</B> are the dimensions of the viewport.
+Given this projection matrix, polygon vertices and pixel image positions
+should be placed at integer coordinates to rasterize predictably. For example,
+<B>glRecti(</B>0, 0, 1, 1<B>)</B> reliably fills the lower left pixel of
+the viewport, and <B>glRasterPos2i(</B>0, 0<B>)</B> reliably positions
+an unzoomed image at the lower left of the viewport. Point vertices, line
+vertices, and bitmap positions should be placed at half-integer locations,
+however. For example, a line drawn from (<I>x1</I>, 0.5) to (<I>x2</I>,
+0.5) will be reliably rendered along the bottom row of pixels int the viewport,
+and a point drawn at (0.5, 0.5) will reliably fill the same pixel as <B>glRecti(</B>0,
+0, 1, 1<B>)</B>.
+<P>An optimum compromise that allows all primitives to be specified at
+integer positions, while still ensuring predictable rasterization, is to
+translate <I>x</I> and <I>y</I> by 0.375, as shown in the following code
+fragment. Such a translation keeps polygon and pixel image edges safely
+away from the centers of pixels, while moving line vertices close enough
+to the pixel centers.
+<PRE>glViewport(0, 0, width, height);
+glMatrixMode(GL_PROJECTION);
+glLoadIdentity();
+gluOrtho2D(0, width, 0, height);
+glMatrixMode(GL_MODELVIEW);
+glLoadIdentity();
+glTranslatef(0.375, 0.375, 0.0);
+/* render all primitives at integer positions */</PRE>
+Avoid using negative <I>w</I> vertex coordinates and negative <I>q</I>
+texture coordinates. OpenGL might not clip such coordinates correctly and
+might make interpolation errors when shading primitives defined by such
+coordinates.</UL>
+
+<HR>
+<H2>
+OpenGL Performance Tips</H2>
+
+<UL>Use <B>glColorMaterial()</B> when only a single material property is
+being varied rapidly (at each vertex, for example). Use <B>glMaterial()</B>
+for infrequent changes, or when more than a single material property is
+being varied rapidly.
+<BR>&nbsp;
+<P>Use <B>glLoadIdentity()</B> to initialize a matrix, rather than loading
+your own copy of the identity matrix.
+<BR>&nbsp;
+<P>Use specific matrix calls such as <B>glRotate*()</B>, <B>glTranslate*()</B>,
+and <B>glScale*()</B>, rather than composing your own rotation, translation,
+and scale matrices and calling <B>glMultMatrix()</B>.
+<BR>&nbsp;
+<P>Use <B>glPushAttrib()</B> and <B>glPopAttrib()</B> to save and restore
+state values. Use query functions only when your application requires the
+state values for its own computations.
+<BR>&nbsp;
+<P>Use display lists to encapsulate potentially expensive state changes.
+For example, place all the <B>glTexImage*()</B> calls required to completely
+specify a texture, and perhaps the associated <B>glTexParameter*()</B>,
+<B>glPixelStore*()</B>, and <B>glPixelTransfer*()</B> calls as well, into
+a single display list. Call this display list to select the texture.
+<BR>&nbsp;
+<P>Use display lists to encapsulate the rendering calls of rigid objects
+that will be drawn repeatedly.
+<BR>&nbsp;
+<P>Use evaluators even for simple surface tessellations to minimize network
+bandwidth in client-server environments.
+<BR>&nbsp;
+<P>Provide unit-length normals if it's possible to do so, and avoid the
+overhead of GL_NORMALIZE. Avoid using <B>glScale*()</B> when doing lighting
+because it almost always requies that GL_NORMALIZE be enabled.
+<BR>&nbsp;
+<P>Set <B>glShadeModel()</B> to GL_FLAT if smooth shading isn't required.
+<BR>&nbsp;
+<P>Use a single <B>glClear()</B> call per frame if possible. Do not use
+<B>glClear()</B> to clear small subregions of the buffers; use it only
+for complete or near-complete clears.
+<BR>&nbsp;
+<P>Use a single call to <B>glBegin(</B>GL_TRIANGLES<B>)</B> to draw multiple
+independent triangles, rather than calling <B>glBegin(</B>GL_TRIANGLES<B>)</B>
+multiple times, or calling <B>glBegin(</B>GL_POLYGON<B>)</B>. Even if only
+a single triangle is to be drawn, use GL_TRIANGLES rather than GL_POLYGON.
+Use a single call to <B>glBegin(</B>GL_QUADS<B>)</B> in the same manner,
+rather than calling <B>glBegin(</B>GL_POLYGON<B>)</B> repeatedly. Likewise,
+use a single call to <B>glBegin(</B>GL_LINES<B>)</B> to draw multiple independent
+line segments, rather than calling <B>glBegin(</B>GL_LINES<B>)</B> multiple
+times.
+<BR>&nbsp;
+<P>In general, use the vector forms of commands to pass precomputed data,
+and use the scalar forms of commands to pass values that are computed near
+call time.
+<BR>&nbsp;
+<P>Avoid making redundant mode changes, such as setting the color to the
+same value between each vertex of a flat-shaded polygon.
+<BR>&nbsp;
+<P>Be sure to disable expensive rasterization and per-fragment operations
+when drawing or copying images. OpenGL will apply textures to pixel images
+if asked to!</UL>
+
+<HR>
+<H2>
+GLX Tips</H2>
+
+<UL>Use <B>glXWaitGL()</B> rather than <B>glFinish()</B> to force X rendering
+commands to follow GL rendering commands.
+<BR>&nbsp;
+<P>Likewise, use <B>glXWaitX()</B> rather than <B>glXSync()</B> to force
+GL rendering commands to follow X rendering commands.
+<BR>&nbsp;
+<P>Be careful when using <B>glXChooseVisual()</B> because boolean selections
+are matched exactly. Since some implementations won't export visuals with
+all combinations of boolean capabilities, you should call <B>glXChooseVisual()</B>
+several times with different boolean values before you give up. For example,
+if no single-buffered visual with the required characteristics is available,
+check for a double-buffered visual with the same capabilities. It might
+be available, and it's easy to use.</UL>
+
+<HR><A HREF="appendixg.html">[Previous chapter]</A> <A HREF="appendixi.html">[Next
+chapter]
+<HR></A>See the <A HREF="about.html">About</A> page for copyright, authoring
+and distribution information.
+</BODY>
+</HTML>
